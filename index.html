@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+
+
+<html lang="en">
+	<head>
+		<title>
+			derp
+		</title>
+		<link rel="stylesheet" href="reset.css" />
+		<script type="text/javascript" src="jquery-1.6.1.js"></script>
+		<script type="text/javascript" src="Detector.js"></script>
+		<script type="text/javascript" src="Three.js"></script>
+		<script type="text/javascript" src="RequestAnimationFrame.js"></script>
+		<script type="text/javascript" src="testData.js"></script>
+		<script type="text/javascript" src="BlockType.js"></script>
+		<script type="text/javascript" src="BlockHandler.js"></script>
+		<script type="text/javascript">
+			var CHUNK_SIZE_X = 16;
+			var CHUNK_SIZE_Y = 128;
+			var CHUNK_SIZE_Z = 16;
+			var BLOCK_SIZE = 64;
+			var camera, scene, renderer;
+			
+				
+
+			scene = new THREE.Scene();
+
+				
+			$(function() {
+				if ( ! Detector.webgl ) {
+					Detector.addGetWebGLMessage();
+				}
+				init();
+				animate();
+				
+				function init() {
+					container = $("#container");
+					materials = []
+					
+					var grass_dirt = loadTexture( 'textures/minecraft/grass_dirt.png' ),
+					grass = loadTexture( 'textures/minecraft/grass.png' ),
+					dirt = loadTexture( 'textures/minecraft/dirt.png' ),
+					smoothstone = loadTexture( 'textures/minecraft/smoothstone.png' );
+					sand = loadTexture( 'textures/minecraft/sand.png' );
+					woodside = loadTexture( 'textures/minecraft/woodside.png' );
+					woodtopbottom = loadTexture( 'textures/minecraft/woodtopbottom.png' );
+					coal = loadTexture( 'textures/minecraft/coal.png' );
+					leaves = loadTexture( 'textures/minecraft/leaves.png' );
+					cactusSide = loadTexture( 'textures/minecraft/cactusside.png' );
+					cactusTop = loadTexture( 'textures/minecraft/cactustop.png' );
+					gravel = loadTexture( 'textures/minecraft/gravel.png' );
+					sandstoneTop = loadTexture( 'textures/minecraft/sandStoneTop.png' );
+					sandstoneSide = loadTexture( 'textures/minecraft/sandstoneSide.png' );
+					sandstoneBottom = loadTexture( 'textures/minecraft/sandstoneBottom.png' );
+					water = loadTexture( 'textures/minecraft/water.png' );
+					lava = loadTexture( 'textures/minecraft/lava.png' );
+					
+					
+	 
+	 
+					var textures = loadTexture('textures/minecraft/textures.png');
+					
+					grassMaterial = [
+						grass_dirt, // right
+						grass_dirt, // left
+						grass, // top
+						dirt, // bottom
+						grass_dirt, // back
+						grass_dirt  // front
+					];
+					lavaMaterial = [
+						lava, // right
+						lava, // left
+						lava, // top
+						lava, // bottom
+						lava, // back
+						lava  // front
+					];
+					waterMaterial = [
+						water, // right
+						water, // left
+						water, // top
+						water, // bottom
+						water, // back
+						water  // front
+					];
+					
+					sandstoneMaterial = [
+						sandstoneSide, // right
+						sandstoneSide, // left
+						sandstoneTop, // top
+						sandstoneBottom, // bottom
+						sandstoneSide, // back
+						sandstoneSide  // front
+					];
+					
+					cactusMaterial = [
+						cactusSide, // right
+						cactusSide, // left
+						cactusTop, // top
+						cactusTop, // bottom
+						cactusSide, // back
+						cactusSide  // front
+					];
+					
+					gravelMaterial = [
+						gravel, // right
+						gravel, // left
+						gravel, // top
+						gravel, // bottom
+						gravel, // back
+						gravel  // front
+					];
+					
+					woodMaterial = [
+						woodside, // right
+						woodside, // left
+						woodtopbottom, // top
+						woodtopbottom, // bottom
+						woodside, // back
+						woodside  // front
+					];
+					coalMaterial = [
+						coal, // right
+						coal, // left
+						coal, // top
+						coal, // bottom
+						coal, // back
+						coal  // front
+					];
+					leafMaterial = [
+						leaves, // right
+						leaves, // left
+						leaves, // top
+						leaves, // bottom
+						leaves, // back
+						leaves  // front
+					];
+					
+					dirtMaterial = [
+						dirt, // right
+						dirt, // left
+						dirt, // top
+						dirt, // bottom
+						dirt, // back
+						dirt  // front
+					];
+					
+					smoothStoneMaterial = [
+						smoothstone, // right
+						smoothstone, // left
+						smoothstone, // top
+						smoothstone, // bottom
+						smoothstone, // back
+						smoothstone  // front
+					];
+					
+					sandMaterial = [
+						sand, // right
+						sand, // left
+						sand, // top
+						sand, // bottom
+						sand, // back
+						sand  // front
+					];
+					
+					
+					blockHandler = new BlockHandler();
+					smoothStoneBlockType = new BlockType(1, smoothStoneMaterial);
+					blockHandler.addType(smoothStoneBlockType);
+					dirtBlockType = new BlockType(3, dirtMaterial);
+					blockHandler.addType(dirtBlockType);
+					grassBlockType = new BlockType(2, grassMaterial);
+					blockHandler.addType(grassBlockType);
+					sandBlockType = new BlockType(12, sandMaterial);
+					blockHandler.addType(sandBlockType);
+					woodBlockType = new BlockType(17, woodMaterial);
+					blockHandler.addType(woodBlockType);
+					coalBlockType = new BlockType(16, coalMaterial);
+					blockHandler.addType(coalBlockType);
+					leafBlockType = new BlockType(18, leafMaterial);
+					blockHandler.addType(leafBlockType);
+					cactusBlockType = new BlockType(81, cactusMaterial);
+					blockHandler.addType(cactusBlockType);
+					gravelBlockType = new BlockType(13, gravelMaterial);
+					blockHandler.addType(gravelBlockType);
+					sandstoneBlockType = new BlockType(24, sandstoneMaterial);
+					blockHandler.addType(sandstoneBlockType);
+					waterBlockType = new BlockType(9, waterMaterial);
+					blockHandler.addType(waterBlockType);
+					lavaBlockType = new BlockType(11, lavaMaterial);
+					blockHandler.addType(lavaBlockType);
+					
+					
+					console.log("loading region");
+					camera = new THREE.QuakeCamera( {
+						fov: 60, aspect: window.innerWidth / window.innerHeight, near: 1, far: 20000,
+						movementSpeed: 500, lookSpeed: 0.075, noFly: false, lookVertical: true, autoForward: false
+					} );
+					
+					
+					//lawl
+					var DERP = (true) ? regionData["chunks"].length : 30;
+					
+					
+					//parse the region
+					for (var lcv = 0; lcv < DERP; lcv++) {
+						console.log("parsing chunk " + lcv);
+						var g = parseChunk(regionData["chunks"][lcv]);
+						mesh = new THREE.Mesh( g, new THREE.MeshFaceMaterial() );
+						scene.addObject( mesh );
+					}
+					
+					/*
+					scene.fog = new THREE.FogExp2( 0xffffff, 0.00015 );
+					
+					var ambientLight = new THREE.AmbientLight( 0xcccccc );
+					scene.addLight( ambientLight );
+	 
+					var directionalLight = new THREE.DirectionalLight( 0xffffff, .5 );
+					directionalLight.position.x = 1;
+					directionalLight.position.y = 1;
+					directionalLight.position.z = 0.5;
+					directionalLight.position.normalize();
+					scene.addLight( directionalLight );
+					*/
+					console.log("region loaded");		
+					console.log("setting up renderer");
+					renderer = new THREE.WebGLRenderer();
+					renderer.setSize( window.innerWidth, window.innerHeight );
+					$(renderer.domElement).appendTo(container);
+					console.log("renderer setup!");
+					printout("everything loaded. LIKE A BOSS");
+					
+				}
+				
+				function parseChunk(chunkInfo) {
+						//just extract one region
+						var hThreshold = 30;
+						var chunkData = chunkInfo["data"];
+						var chunkOffset = chunkInfo["chunkLoc"];
+						var geometry = new THREE.Geometry();
+					
+						//for each coordinate
+						for (var x = 0; x < CHUNK_SIZE_X; x++) {
+							for (var y = 0; y < CHUNK_SIZE_Y; y++) {
+								for (var z = 0; z < CHUNK_SIZE_Z; z++) {
+									if (y > hThreshold) {
+										//get the index for the block using the special formula
+										var index = y + ( z * CHUNK_SIZE_Y + ( x * CHUNK_SIZE_Y * CHUNK_SIZE_Z ) );
+										
+										//the block ID for the block at (x,y,z)
+										var blockID = chunkData[index];
+										
+										//not air
+										var cube = undefined;
+										if (blockID != 0) {
+											//get the index for which the faces will be blank facing those adjecent to a block
+											newIndex = getNewBlockIndex(chunkData, x,y,z);
+											
+											//get the GL cube
+											cube = blockHandler.getCorrectGLCube(blockID, newIndex);
+											
+											//hax0r, put the camera somewhere near a grass block
+											if (blockID == 2) {
+												camera.position.x = (x + chunkOffset[0] * 16) * BLOCK_SIZE;
+												camera.position.y = y * BLOCK_SIZE;
+												camera.position.z = (z + chunkOffset[1] * 16) * BLOCK_SIZE;
+											}
+											
+											//merge the cube to the geometry
+											if (cube != undefined) {
+												cube.position.y = y*BLOCK_SIZE;
+												cube.position.x = (x + chunkOffset[0] * 16) * BLOCK_SIZE;
+												cube.position.z = (z + chunkOffset[1] * 16) * BLOCK_SIZE;
+												GeometryUtils.merge( geometry, cube );
+											}
+										}
+									}
+								}
+							}
+						}
+						
+						//return the geometry for this block
+						return geometry;
+				}
+				
+				function getNewBlockIndex(chunkData, x,y,z) {
+								var px, nx, py, ny, pz, nz;
+												
+												//{n,p}{x,y,z} is 1 if there is a block adjecent to it.
+												nz = (z > 0 && chunkData[y + ( (z - 1) * CHUNK_SIZE_Y + ( (x) * CHUNK_SIZE_Y * CHUNK_SIZE_Z ) )]) ? 1 : 0;
+												pz = (z < (CHUNK_SIZE_Z-1) && chunkData[y + ( (z + 1) * CHUNK_SIZE_Y + ( (x) * CHUNK_SIZE_Y * CHUNK_SIZE_Z ) )]) ? 1 : 0;
+												
+												px = (x > 0 && chunkData[y + ( (z) * CHUNK_SIZE_Y + ( (x - 1) * CHUNK_SIZE_Y * CHUNK_SIZE_Z ) )]) ? 1 : 0;
+												nx = (x < (CHUNK_SIZE_X-1) && chunkData[y + ( (z) * CHUNK_SIZE_Y + ( (x + 1) * CHUNK_SIZE_Y * CHUNK_SIZE_Z ) )]) ? 1 : 0;
+												
+												ny = (y > 0 && chunkData[(y - 1) + ( (z) * CHUNK_SIZE_Y + ( (x) * CHUNK_SIZE_Y * CHUNK_SIZE_Z ) )]) ? 1 : 0;
+												py = (y < (CHUNK_SIZE_Y-1) && chunkData[(y + 1) + ( (z) * CHUNK_SIZE_Y + ( (x) * CHUNK_SIZE_Y * CHUNK_SIZE_Z ) )]) ? 1 : 0;
+												
+												//sides = { px: true, nx: true, py: true, ny: true, pz: true, nz: true };
+												var newIndex = nz + 2*pz + 2*2*ny + 2*2*2*py + 2*2*2*2*nx + 2*2*2*2*2*px;
+												
+												return newIndex;
+				}
+					
+				function animate() {
+					requestAnimationFrame( animate );
+					render();
+				}
+				
+				function render() {
+					renderer.render( scene, camera );
+				}
+				
+				function loadTexture( path ) {
+					var image = new Image();
+					image.onload = function () { texture.needsUpdate = true; };
+					image.src = path;
+					var texture  = new THREE.Texture( image, new THREE.UVMapping(), THREE.ClampToEdgeWrapping, THREE.ClampToEdgeWrapping, THREE.NearestFilter, THREE.LinearMipMapLinearFilter );
+					return new THREE.MeshLambertMaterial( { map: texture } );
+				}
+				
+				function printout(s) {
+					$("#progress").text(s);
+				}
+			});
+		</script>
+	</head>
+	<body>
+		<div id="progress">progress</div>
+		<div id="container"></div>
+	</body>
+</html>
