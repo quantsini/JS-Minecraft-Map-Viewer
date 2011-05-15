@@ -43,5 +43,8 @@ BlockType = function(t,m,s) {
 					return t == this.type;
 				}
 				BlockType.prototype.getCubeMesh = function(index) {
+					if (index == 63) {
+						return undefined;
+					}
 					return new THREE.Mesh(this.cubes[index]);
 				}

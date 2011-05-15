@@ -192,24 +192,38 @@
 					blockHandler.addType(lavaBlockType);
 					
 					
-					console.log("loading region");
 					camera = new THREE.QuakeCamera( {
 						fov: 60, aspect: window.innerWidth / window.innerHeight, near: 1, far: 20000,
 						movementSpeed: 500, lookSpeed: 0.075, noFly: false, lookVertical: true, autoForward: false
 					} );
 					
+					camera.position.x = (0 * 16) * BLOCK_SIZE;
+					camera.position.y = 64 * BLOCK_SIZE;
+					camera.position.z = (0 * 16) * BLOCK_SIZE;
 					
-					//lawl
-					var DERP = (true) ? regionData["chunks"].length : 30;
 					
+					console.log("loading nbt file");
+					var loc = "map/region/r.0.0.mcr";
 					
-					//parse the region
-					for (var lcv = 0; lcv < DERP; lcv++) {
+					console.log("finished loading nbt file");
+					console.log("loading region");
+					for (var lcv = 0; lcv < 81 /*regionData["chunks"].length*/; lcv++) {
 						console.log("parsing chunk " + lcv);
+						try {
 						var g = parseChunk(regionData["chunks"][lcv]);
+						}
+						catch(err)
+						{
+							alert(err);
+						}
 						mesh = new THREE.Mesh( g, new THREE.MeshFaceMaterial() );
 						scene.addObject( mesh );
 					}
+					
+					
+					console.log("here");
+					//parse the region
+
 					
 					/*
 					scene.fog = new THREE.FogExp2( 0xffffff, 0.00015 );
@@ -236,11 +250,12 @@
 				
 				function parseChunk(chunkInfo) {
 						//just extract one region
-						var hThreshold = 30;
+						var hThreshold = -1;
 						var chunkData = chunkInfo["data"];
 						var chunkOffset = chunkInfo["chunkLoc"];
 						var geometry = new THREE.Geometry();
-					
+						
+						//var geometry = false;
 						//for each coordinate
 						for (var x = 0; x < CHUNK_SIZE_X; x++) {
 							for (var y = 0; y < CHUNK_SIZE_Y; y++) {
@@ -261,19 +276,19 @@
 											//get the GL cube
 											cube = blockHandler.getCorrectGLCube(blockID, newIndex);
 											
-											//hax0r, put the camera somewhere near a grass block
-											if (blockID == 2) {
-												camera.position.x = (x + chunkOffset[0] * 16) * BLOCK_SIZE;
-												camera.position.y = y * BLOCK_SIZE;
-												camera.position.z = (z + chunkOffset[1] * 16) * BLOCK_SIZE;
-											}
 											
 											//merge the cube to the geometry
 											if (cube != undefined) {
 												cube.position.y = y*BLOCK_SIZE;
 												cube.position.x = (x + chunkOffset[0] * 16) * BLOCK_SIZE;
 												cube.position.z = (z + chunkOffset[1] * 16) * BLOCK_SIZE;
-												GeometryUtils.merge( geometry, cube );
+												if (geometry == false) {
+													geometry = cube;
+												}
+												else
+												{
+													GeometryUtils.merge( geometry, cube );
+												}
 											}
 										}
 									}
@@ -307,6 +322,19 @@
 				function animate() {
 					requestAnimationFrame( animate );
 					render();
+					var x, y, z, chunkX, chunkZ, regionX, regionZ;
+					x = Math.floor(camera.position.x/BLOCK_SIZE);
+					y = Math.floor(camera.position.y/BLOCK_SIZE);
+					z = Math.floor(camera.position.z/BLOCK_SIZE);
+					chunkX = Math.floor(x/16);
+					chunkZ = Math.floor(z/16);
+					regionX = Math.floor(chunkX/32);
+					regionZ = Math.floor(chunkZ/32);
+					var coords = "(" + x + ", " + y + ", " + z + ")";
+					var chunkCoords = "(" + chunkX + ", " + chunkZ + ")";
+					var regionCoords = "(" + regionX + ", " + regionZ + ")";
+					
+					printout("Player: " + coords + " Chunk: " + chunkCoords + " Region: " + regionCoords);
 				}
 				
 				function render() {
