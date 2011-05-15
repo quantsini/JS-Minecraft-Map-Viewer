@@ -1,0 +1,14 @@
+This is a rudimentary Minecraft viewer using the Three.js WebGL framework.
+
+You can pretty much download this, and open up index.html to see an example map I generated in my singleplayer game.
+
+testData.js - this is the actual data recovered from a region The format is
+regionData = {region: <the region code>, chunks: <an array of chunks> }
+
+The array of chunks is formulated as follows
+{chunkLoc: <the location of the chunk>, data: <the uncompressed byte array of the chunk, formatted the exact same way as the alpha-infdev NBT chunk format>}
+
+Things to do:
+_LOTS_ of refactoring
+write a JS library to read region data, which is basically a NBT file format.
+Better graphics optimizations
