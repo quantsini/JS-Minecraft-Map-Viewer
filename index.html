@@ -40,6 +40,9 @@
 			var blockData;
 			var regions = new Array();
 			var renderedChunks = new Array();
+			
+			var chunkBuffer = new Array();
+			var playerChunks = new Array();
 
 			var oldCoords = [null,null];
 			scene = new THREE.Scene();
@@ -281,22 +284,22 @@
 				}
 				
 				function getNewBlockIndex(chunkData, x,y,z) {
-								var px, nx, py, ny, pz, nz;
+					var px, nx, py, ny, pz, nz;
 												
-												//{n,p}{x,y,z} is 1 if there is a block adjecent to it.
-												nz = (z > 0 && chunkData[y + ( (z - 1) * CHUNK_SIZE_Y + ( (x) * CHUNK_SIZE_Y * CHUNK_SIZE_Z ) )]) ? 1 : 0;
-												pz = (z < (CHUNK_SIZE_Z-1) && chunkData[y + ( (z + 1) * CHUNK_SIZE_Y + ( (x) * CHUNK_SIZE_Y * CHUNK_SIZE_Z ) )]) ? 1 : 0;
+					//{n,p}{x,y,z} is 1 if there is a block adjecent to it.
+					nz = (z > 0 && chunkData[y + ( (z - 1) * CHUNK_SIZE_Y + ( (x) * CHUNK_SIZE_Y * CHUNK_SIZE_Z ) )]) ? 1 : 0;
+					pz = (z < (CHUNK_SIZE_Z-1) && chunkData[y + ( (z + 1) * CHUNK_SIZE_Y + ( (x) * CHUNK_SIZE_Y * CHUNK_SIZE_Z ) )]) ? 1 : 0;
 												
-												px = (x > 0 && chunkData[y + ( (z) * CHUNK_SIZE_Y + ( (x - 1) * CHUNK_SIZE_Y * CHUNK_SIZE_Z ) )]) ? 1 : 0;
-												nx = (x < (CHUNK_SIZE_X-1) && chunkData[y + ( (z) * CHUNK_SIZE_Y + ( (x + 1) * CHUNK_SIZE_Y * CHUNK_SIZE_Z ) )]) ? 1 : 0;
+					px = (x > 0 && chunkData[y + ( (z) * CHUNK_SIZE_Y + ( (x - 1) * CHUNK_SIZE_Y * CHUNK_SIZE_Z ) )]) ? 1 : 0;
+					nx = (x < (CHUNK_SIZE_X-1) && chunkData[y + ( (z) * CHUNK_SIZE_Y + ( (x + 1) * CHUNK_SIZE_Y * CHUNK_SIZE_Z ) )]) ? 1 : 0;
 												
-												ny = (y > 0 && chunkData[(y - 1) + ( (z) * CHUNK_SIZE_Y + ( (x) * CHUNK_SIZE_Y * CHUNK_SIZE_Z ) )]) ? 1 : 0;
-												py = (y < (CHUNK_SIZE_Y-1) && chunkData[(y + 1) + ( (z) * CHUNK_SIZE_Y + ( (x) * CHUNK_SIZE_Y * CHUNK_SIZE_Z ) )]) ? 1 : 0;
+					ny = (y > 0 && chunkData[(y - 1) + ( (z) * CHUNK_SIZE_Y + ( (x) * CHUNK_SIZE_Y * CHUNK_SIZE_Z ) )]) ? 1 : 0;
+					py = (y < (CHUNK_SIZE_Y-1) && chunkData[(y + 1) + ( (z) * CHUNK_SIZE_Y + ( (x) * CHUNK_SIZE_Y * CHUNK_SIZE_Z ) )]) ? 1 : 0;
 												
-												//sides = { px: true, nx: true, py: true, ny: true, pz: true, nz: true };
-												var newIndex = nz + 2*pz + 2*2*ny + 2*2*2*py + 2*2*2*2*nx + 2*2*2*2*2*px;
+					//sides = { px: true, nx: true, py: true, ny: true, pz: true, nz: true };
+					var newIndex = nz + 2*pz + 2*2*ny + 2*2*2*py + 2*2*2*2*nx + 2*2*2*2*2*px;
 												
-												return newIndex;
+					return newIndex;
 				}
 					
 				function animate() {
@@ -324,15 +327,50 @@
 						ready = false;
 						console.log("YEAH");
 						
-					
-						//we need the chunk
-						if (!chunkRendered(chunkX,chunkZ)) {
-							if (regions.length != 0) {
-								renderChunk(chunkX,chunkZ,regions);
-								
-								renderedChunks.push({x: chunkX, z: chunkZ});
+						//compute the chunks needed to be rendered
+						playerChunks = new Array();
+						var RADIUS = 3;
+						
+						//chunkX, chunkY
+						for (var lcv = 0; lcv < RADIUS; lcv++) {
+							for (var lcv1 = 0; lcv1 < RADIUS; lcv1++) {
+								playerChunks.push({x: chunkX + (RADIUS-1)/2 - lcv, z:  chunkZ + (RADIUS-1)/2 - lcv1});
 							}
 						}
+						console.log(playerChunks);
+						
+						newChunkBuffer = new Array();
+						for (var lcv = 0; lcv < chunkBuffer.length; lcv++) {
+							remove = true;
+							for (var lcv1 = 0; lcv1 < playerChunks.length; lcv1++) {
+								if (chunkBuffer[lcv].x == playerChunks[lcv1].x && chunkBuffer[lcv].z == playerChunks[lcv1].z) {
+									newChunkBuffer.push(chunkBuffer[lcv]);
+									remove = false;
+								}
+								
+							}
+							
+							if (remove) {
+								console.log("removing mesh");
+								scene.removeObject(chunkBuffer[lcv].mesh); //https://github.com/mrdoob/three.js/issues/116
+							}
+						}
+						
+						chunkBuffer = newChunkBuffer;
+						//render new chunks
+						$.each(playerChunks, function(index, item) {
+							console.log("trying to render chunk at " + item.x + "," + item.z);
+							if (!chunkRendered(item.x,item.z)) {
+								if (regions.length != 0) {
+									renderChunk(item.x,item.z,regions);
+								}
+							}
+							else
+							{
+								console.log("rendered already");
+							}
+						});
+						
 					}
 					
 					
@@ -342,15 +380,15 @@
 				
 				
 				function chunkRendered(x,z) {
-				
-					for (var lcv = 0; lcv < renderedChunks.length; lcv++) {
-						if (renderedChunks[lcv].x == x && renderedChunks[lcv].z == z) {
+					for (var lcv = 0; lcv < chunkBuffer.length; lcv++) {
+						if (chunkBuffer[lcv].x == x && chunkBuffer[lcv].z == z) {
 							return true;
 						}
 					}
 					
 					return false;
 				}
+				
 				function render() {
 					renderer.render( scene, camera );
 				}
@@ -388,28 +426,29 @@
 						event.preventDefault();
 						var regionFiles = event.originalEvent.dataTransfer.files; 
 						
+						if (regionFiles.length == 0)
+						{
+							alert("error loading file");
+							return;
+						}
 						
 						var k = 0;
-						var fr = null;
-						var regionLoc = null
-						var match;
-						for (var lcv = 0; lcv < regionFiles.length; lcv++) {
-							//get the region location
-							var region = regionFiles[lcv];
+						$.each(regionFiles, function(index,region) {
 							var re = new RegExp("\\br.(-{0,1}\\d+).(-{0,1}\\d+).mcr+\\b")
-							match = re.exec(region.fileName);
-							regionLoc ={x: parseInt(match[1]), z: parseInt(match[2])};
+							var match = re.exec(region.fileName);
+							var regionLoc = {x: parseInt(match[1]), z: parseInt(match[2])};
+							var fr = new FileReader();
 							
-							fr = new FileReader();
-							fr.readAsBinaryString(region);
 							fr.onerror = function(event) {
 								console.log(event);
 							}
 							
-							fr.onload = function(event) {
-								var rLoc = regionLoc
+						
+							fr.onloadend= function(event) {
+								var rLoc = regionLoc;
+								console.log(rLoc);
 								var data = event.target.result;
-								regionFile = new RegionFile(data, rLoc);
+								var regionFile = new RegionFile(data, rLoc);
 								regions.push(regionFile);
 								k++;
 								if (k == regionFiles.length) {
@@ -417,24 +456,25 @@
 								}
 							};
 							
+							fr.readAsBinaryString(region);
 							fr = null;
-						}
+						});
 					});
 					
 					
 					function renderChunk(cx,cz, regions) {
+						//renders this chunk at world location cx, cz
 						//get the correct region for this chunk
 						var regionX = Math.floor(cx/32);
 						var regionZ = Math.floor(cz/32);
 						var regionFile = null;
-						for (var lcv = 0; lcv < regions.length; lcv++) {
-				
-							console.log(regions[lcv].regionLoc.x + " " + regions[lcv].regionLoc.z);
-							if (regions[lcv].regionLoc.x == regionX && regions[lcv].regionLoc.z == regionZ) {
+						
+						$.each(regions, function(index, region) {
+							if (region.regionLoc.x == regionX && region.regionLoc.z == regionZ) {
 								console.log("DERP");
-								regionFile = regions[lcv];
+								regionFile = region;
 							}
-						}
+						});
 						
 						if (regionFile != null) {
 							lcv = cx - 32*regionX;
@@ -454,6 +494,9 @@
 									var g = parseChunk(temp);
 									mesh = new THREE.Mesh( g, new THREE.MeshFaceMaterial() );
 									scene.addObject( mesh );
+									
+									console.log("pushing " + cx + "," + cz);
+									chunkBuffer.push({x: cx, z: cz, mesh: mesh});
 								}
 								else
 								{
@@ -479,5 +522,6 @@
 		<div id="fileContainer" >
 			Drag a region file here
 		</div>
+		Example Map: Download <a href="map/region/r.0.0.mcr">this file</a> then drag it in the space above.
 	</body>
 </html>
