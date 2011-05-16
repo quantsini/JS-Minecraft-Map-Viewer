@@ -7,20 +7,37 @@
 			derp
 		</title>
 		<link rel="stylesheet" href="reset.css" />
+<style type="text/css">
+#fileContainer {
+ min-height: 100px;
+  width: 200px;
+  border: 3px dashed #ccc;
+  margin: 10px;
+  padding: 10px;
+}
+</style>
 		<script type="text/javascript" src="jquery-1.6.1.js"></script>
 		<script type="text/javascript" src="Detector.js"></script>
 		<script type="text/javascript" src="Three.js"></script>
 		<script type="text/javascript" src="RequestAnimationFrame.js"></script>
-		<script type="text/javascript" src="testData.js"></script>
 		<script type="text/javascript" src="BlockType.js"></script>
 		<script type="text/javascript" src="BlockHandler.js"></script>
+		<script type="text/javascript" src="DataReader.js"></script>
+		<script type="text/javascript" src="util.js"></script>
+		<script type="text/javascript" src="deflate.js"></script>
+		<script type="text/javascript" src="inflate.js"></script>
+		<script type="text/javascript" src="RegionFile.js"></script>
+		<script type="text/javascript" src="nbt.js"></script>
 		<script type="text/javascript">
 			var CHUNK_SIZE_X = 16;
 			var CHUNK_SIZE_Y = 128;
 			var CHUNK_SIZE_Z = 16;
 			var BLOCK_SIZE = 64;
+			var SIZE_Y = 640;
+			var SIZE_X = 800;
 			var camera, scene, renderer;
 			
+			var blockData;
 				
 
 			scene = new THREE.Scene();
@@ -193,7 +210,7 @@
 					
 					
 					camera = new THREE.QuakeCamera( {
-						fov: 60, aspect: window.innerWidth / window.innerHeight, near: 1, far: 20000,
+						fov: 60, aspect: SIZE_X / SIZE_Y, near: 1, far: 20000,
 						movementSpeed: 500, lookSpeed: 0.075, noFly: false, lookVertical: true, autoForward: false
 					} );
 					
@@ -205,46 +222,12 @@
 					console.log("loading nbt file");
 					var loc = "map/region/r.0.0.mcr";
 					
-					console.log("finished loading nbt file");
-					console.log("loading region");
-					for (var lcv = 0; lcv < 81 /*regionData["chunks"].length*/; lcv++) {
-						console.log("parsing chunk " + lcv);
-						try {
-						var g = parseChunk(regionData["chunks"][lcv]);
-						}
-						catch(err)
-						{
-							alert(err);
-						}
-						mesh = new THREE.Mesh( g, new THREE.MeshFaceMaterial() );
-						scene.addObject( mesh );
-					}
-					
-					
-					console.log("here");
-					//parse the region
-
-					
-					/*
-					scene.fog = new THREE.FogExp2( 0xffffff, 0.00015 );
-					
-					var ambientLight = new THREE.AmbientLight( 0xcccccc );
-					scene.addLight( ambientLight );
-	 
-					var directionalLight = new THREE.DirectionalLight( 0xffffff, .5 );
-					directionalLight.position.x = 1;
-					directionalLight.position.y = 1;
-					directionalLight.position.z = 0.5;
-					directionalLight.position.normalize();
-					scene.addLight( directionalLight );
-					*/
 					console.log("region loaded");		
 					console.log("setting up renderer");
 					renderer = new THREE.WebGLRenderer();
-					renderer.setSize( window.innerWidth, window.innerHeight );
-					$(renderer.domElement).appendTo(container);
+					renderer.setSize( SIZE_X, SIZE_Y );
+					$(renderer.domElement).css("border","1px solid red").appendTo(container);
 					console.log("renderer setup!");
-					printout("everything loaded. LIKE A BOSS");
 					
 				}
 				
@@ -352,11 +335,84 @@
 				function printout(s) {
 					$("#progress").text(s);
 				}
+				
+
+				
+					fileContainer = $("#fileContainer");
+					//this is fucking broken, if you remove this, don't expect drop to work
+					fileContainer.bind('dragenter',function(event) {
+						$(this).css("background","black");
+					});
+					
+					//same here, don't remove this or don't expect drop to work
+					fileContainer.bind('dragover',function(event) {
+						event.stopPropagation();
+						event.preventDefault();
+					});
+					
+					
+					fileContainer.bind('dragleave',function(event) {
+						$(this).css("background","white");
+					});
+					
+					fileContainer.bind('drop', function(event) {
+						event.stopPropagation();
+						event.preventDefault();
+						var regionFiles = event.originalEvent.dataTransfer.files; 
+						var region = regionFiles[0];
+						var fr = new FileReader();
+						fr.readAsBinaryString(region);
+						fr.onerror = function(event) {
+							console.log(event);
+						}
+						fr.onprogress = function(event) {
+							console.log(event);
+						}
+						fr.onload = function(event) {
+							var data = event.target.result;
+							readRegion(data);
+						};
+					});
+					
+					function readRegion(data) {
+						regionFile = new RegionFile(data);
+						rawChunk = regionFile.readNBTChunk(0,0);
+						
+						chunkNBT = new NBTReader(rawChunk);
+						chunkData = chunkNBT.read(false);
+						blocks = chunkData.root.Level.Blocks;
+						temp = {chunkLoc: [0, 0], data: blocks};
+						var g = parseChunk(temp);
+						mesh = new THREE.Mesh( g, new THREE.MeshFaceMaterial() );
+						scene.addObject( mesh );
+					}
+					
+					function handleStuff() {
+					console.log("finished loading nbt file");
+					console.log("loading region");
+					for (var lcv = 0; lcv < 1 /*regionData["chunks"].length*/; lcv++) {
+						console.log("parsing chunk " + lcv);
+						try {
+						var g = parseChunk(regionData["chunks"][lcv]);
+						}
+						catch(err)
+						{
+							alert(err);
+						}
+						mesh = new THREE.Mesh( g, new THREE.MeshFaceMaterial() );
+						scene.addObject( mesh );
+					}
+				}
+				
+				
 			});
 		</script>
 	</head>
 	<body>
 		<div id="progress">progress</div>
 		<div id="container"></div>
+		<div id="fileContainer" >
+			Drag a region file here
+		</div>
 	</body>
 </html>
