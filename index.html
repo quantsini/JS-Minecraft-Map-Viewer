@@ -36,10 +36,12 @@
 			var SIZE_Y = 640;
 			var SIZE_X = 800;
 			var camera, scene, renderer;
-			
+			var ready;
 			var blockData;
-				
+			var regions = new Array();
+			var renderedChunks = new Array();
 
+			var oldCoords = [null,null];
 			scene = new THREE.Scene();
 
 				
@@ -217,12 +219,7 @@
 					camera.position.x = (0 * 16) * BLOCK_SIZE;
 					camera.position.y = 64 * BLOCK_SIZE;
 					camera.position.z = (0 * 16) * BLOCK_SIZE;
-					
-					
-					console.log("loading nbt file");
-					var loc = "map/region/r.0.0.mcr";
-					
-					console.log("region loaded");		
+						
 					console.log("setting up renderer");
 					renderer = new THREE.WebGLRenderer();
 					renderer.setSize( SIZE_X, SIZE_Y );
@@ -317,9 +314,43 @@
 					var chunkCoords = "(" + chunkX + ", " + chunkZ + ")";
 					var regionCoords = "(" + regionX + ", " + regionZ + ")";
 					
+					
+					if (oldCoords[0] == null || (oldCoords[0] != chunkX || oldCoords[1] != chunkZ))
+					{
+						ready = true;
+					}
+					
+					if (ready == true) {
+						ready = false;
+						console.log("YEAH");
+						
+					
+						//we need the chunk
+						if (!chunkRendered(chunkX,chunkZ)) {
+							if (regions.length != 0) {
+								renderChunk(chunkX,chunkZ,regions);
+								
+								renderedChunks.push({x: chunkX, z: chunkZ});
+							}
+						}
+					}
+					
+					
+					oldCoords = [chunkX, chunkZ];
 					printout("Player: " + coords + " Chunk: " + chunkCoords + " Region: " + regionCoords);
 				}
 				
+				
+				function chunkRendered(x,z) {
+				
+					for (var lcv = 0; lcv < renderedChunks.length; lcv++) {
+						if (renderedChunks[lcv].x == x && renderedChunks[lcv].z == z) {
+							return true;
+						}
+					}
+					
+					return false;
+				}
 				function render() {
 					renderer.render( scene, camera );
 				}
@@ -335,9 +366,6 @@
 				function printout(s) {
 					$("#progress").text(s);
 				}
-				
-
-				
 					fileContainer = $("#fileContainer");
 					//this is fucking broken, if you remove this, don't expect drop to work
 					fileContainer.bind('dragenter',function(event) {
@@ -359,53 +387,90 @@
 						event.stopPropagation();
 						event.preventDefault();
 						var regionFiles = event.originalEvent.dataTransfer.files; 
-						var region = regionFiles[0];
-						var fr = new FileReader();
-						fr.readAsBinaryString(region);
-						fr.onerror = function(event) {
-							console.log(event);
+						
+						
+						var k = 0;
+						var fr = null;
+						var regionLoc = null
+						var match;
+						for (var lcv = 0; lcv < regionFiles.length; lcv++) {
+							//get the region location
+							var region = regionFiles[lcv];
+							var re = new RegExp("\\br.(-{0,1}\\d+).(-{0,1}\\d+).mcr+\\b")
+							match = re.exec(region.fileName);
+							regionLoc ={x: parseInt(match[1]), z: parseInt(match[2])};
+							
+							fr = new FileReader();
+							fr.readAsBinaryString(region);
+							fr.onerror = function(event) {
+								console.log(event);
+							}
+							
+							fr.onload = function(event) {
+								var rLoc = regionLoc
+								var data = event.target.result;
+								regionFile = new RegionFile(data, rLoc);
+								regions.push(regionFile);
+								k++;
+								if (k == regionFiles.length) {
+									ready = true;
+								}
+							};
+							
+							fr = null;
 						}
-						fr.onprogress = function(event) {
-							console.log(event);
-						}
-						fr.onload = function(event) {
-							var data = event.target.result;
-							readRegion(data);
-						};
 					});
 					
-					function readRegion(data) {
-						regionFile = new RegionFile(data);
-						rawChunk = regionFile.readNBTChunk(0,0);
-						
-						chunkNBT = new NBTReader(rawChunk);
-						chunkData = chunkNBT.read(false);
-						blocks = chunkData.root.Level.Blocks;
-						temp = {chunkLoc: [0, 0], data: blocks};
-						var g = parseChunk(temp);
-						mesh = new THREE.Mesh( g, new THREE.MeshFaceMaterial() );
-						scene.addObject( mesh );
-					}
 					
-					function handleStuff() {
-					console.log("finished loading nbt file");
-					console.log("loading region");
-					for (var lcv = 0; lcv < 1 /*regionData["chunks"].length*/; lcv++) {
-						console.log("parsing chunk " + lcv);
-						try {
-						var g = parseChunk(regionData["chunks"][lcv]);
+					function renderChunk(cx,cz, regions) {
+						//get the correct region for this chunk
+						var regionX = Math.floor(cx/32);
+						var regionZ = Math.floor(cz/32);
+						var regionFile = null;
+						for (var lcv = 0; lcv < regions.length; lcv++) {
+				
+							console.log(regions[lcv].regionLoc.x + " " + regions[lcv].regionLoc.z);
+							if (regions[lcv].regionLoc.x == regionX && regions[lcv].regionLoc.z == regionZ) {
+								console.log("DERP");
+								regionFile = regions[lcv];
+							}
 						}
-						catch(err)
+						
+						if (regionFile != null) {
+							lcv = cx - 32*regionX;
+							lcv1 = cz - 32*regionZ;
+							rawChunk = regionFile.readNBTChunk(lcv,lcv1);
+									
+							if (rawChunk != null && rawChunk != false) {
+								console.log("chunking");
+								chunkNBT = new NBTReader(rawChunk);
+										
+								if (chunkNBT != null) {
+									chunkData = chunkNBT.read(false);
+									blocks = chunkData.root.Level.Blocks;
+									regionOffsetX = regionFile.regionLoc.x * 32;
+									regionOffsetZ = regionFile.regionLoc.z * 32;
+									temp = {chunkLoc: [(lcv + regionOffsetX), (lcv1 + regionOffsetZ)], data: blocks};
+									var g = parseChunk(temp);
+									mesh = new THREE.Mesh( g, new THREE.MeshFaceMaterial() );
+									scene.addObject( mesh );
+								}
+								else
+								{
+									console.log("error reading chunk NBT");
+								}
+							}
+							else
+							{
+								console.log("no chunk here");
+							}
+						}
+						else
 						{
-							alert(err);
+							console.log("no chunk exists");
 						}
-						mesh = new THREE.Mesh( g, new THREE.MeshFaceMaterial() );
-						scene.addObject( mesh );
 					}
-				}
-				
-				
-			});
+		});
 		</script>
 	</head>
 	<body>
