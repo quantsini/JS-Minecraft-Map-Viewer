@@ -337,27 +337,48 @@
 								playerChunks.push({x: chunkX + (RADIUS-1)/2 - lcv, z:  chunkZ + (RADIUS-1)/2 - lcv1});
 							}
 						}
-						console.log(playerChunks);
 						
-						newChunkBuffer = new Array();
-						for (var lcv = 0; lcv < chunkBuffer.length; lcv++) {
-							remove = true;
-							for (var lcv1 = 0; lcv1 < playerChunks.length; lcv1++) {
-								if (chunkBuffer[lcv].x == playerChunks[lcv1].x && chunkBuffer[lcv].z == playerChunks[lcv1].z) {
-									newChunkBuffer.push(chunkBuffer[lcv]);
-									remove = false;
+						
+						if (chunkBuffer.length != 0) {
+							newChunkBuffer = new Array();
+							for (var lcv = 0; lcv < chunkBuffer.length; lcv++) {
+								remove = true;
+								for (var lcv1 = 0; lcv1 < playerChunks.length; lcv1++) {
+									if (chunkBuffer[lcv].x == playerChunks[lcv1].x && chunkBuffer[lcv].z == playerChunks[lcv1].z) {
+										newChunkBuffer.push(chunkBuffer[lcv]);
+										remove = false;
+									}
+									
 								}
 								
+								if (remove) {
+									console.log("removing mesh");
+									//scene.removeObject(chunkBuffer[lcv].mesh); 
+									//https://github.com/mrdoob/three.js/issues/116
+									var o, ol, zobject;
+									object = chunkBuffer[lcv].mesh;
+									for ( o = scene.__webglObjects.length - 1; o >= 0; o -- ) {
+
+										zobject = scene.__webglObjects[ o ].object;
+
+										if ( object == zobject ) {
+
+											scene.__webglObjects.splice( o, 1 );
+											return;
+
+										}
+
+									}
+								
+								
+								}
 							}
 							
-							if (remove) {
-								console.log("removing mesh");
-								scene.removeObject(chunkBuffer[lcv].mesh); //https://github.com/mrdoob/three.js/issues/116
-							}
+							chunkBuffer = newChunkBuffer;
 						}
-						
-						chunkBuffer = newChunkBuffer;
 						//render new chunks
+						
+						
 						$.each(playerChunks, function(index, item) {
 							console.log("trying to render chunk at " + item.x + "," + item.z);
 							if (!chunkRendered(item.x,item.z)) {
