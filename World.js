@@ -16,12 +16,31 @@ World = function(scene) {
 }
 
 World.prototype.constructor = World;
+
+/*
+ * addRegion
+ * This method will add a regionfile to this world.
+ */
 World.prototype.addRegion = function(region) {
 	this.regions.push(region);
 }
+
+/*
+ * addBlockTexture
+ * This method will add the blocktype to the block handler, used for getting the correct material when loading a chunk
+ * Users can define the materials, and perhaps define meshes and functionality of the block
+ *
+ */
 World.prototype.addBlockTexture = function(blockType) {
 	this.blockHandler.addType(blockType);
 }
+
+/*
+ * updateWorld 
+ * This method will automatically load new chunks if a player crosses a chunk boundary, and remove chunks that are not
+ * within the 5x5 matrix centered on the player
+ * 
+ */
 World.prototype.updateWorld = function(playerCoordinates) {
 	var x = playerCoordinates.x;
 	var y = playerCoordinates.y;
@@ -54,7 +73,7 @@ World.prototype.updateWorld = function(playerCoordinates) {
 			}
 		}
 						
-						
+		//make this better	
 		if (this.chunkBuffer.length != 0) {
 			newChunkBuffer = new Array();
 			for (var lcv = 0; lcv < this.chunkBuffer.length; lcv++) {
@@ -89,8 +108,7 @@ World.prototype.updateWorld = function(playerCoordinates) {
 			this.chunkBuffer = newChunkBuffer;
 		}
 		
-		//render new chunks
-						
+		//render new chunks		
 		thisObject = this;
 		$.each(this.playerChunks, function(index, item) {
 			console.log("trying to render chunk at " + item.x + "," + item.z);
@@ -107,6 +125,8 @@ World.prototype.updateWorld = function(playerCoordinates) {
 	this.oldCoords = [chunkX, chunkZ];
 }
 
+/* private methods */
+//checks if chunk x,z is rendered
 World.prototype.chunkRendered = function(x,z) {
 	for (var lcv = 0; lcv < this.chunkBuffer.length; lcv++) {
 		if (this.chunkBuffer[lcv].x == x && this.chunkBuffer[lcv].z == z) {
@@ -116,6 +136,7 @@ World.prototype.chunkRendered = function(x,z) {
 	return false;
 }
 
+//gets the block index of a block at x,y,z relative to a chunk.
 World.prototype.getNewBlockIndex = function(chunkData, x,y,z) {
 	var px, nx, py, ny, pz, nz;
 							
@@ -135,6 +156,7 @@ World.prototype.getNewBlockIndex = function(chunkData, x,y,z) {
 	return newIndex;
 }
 
+//parses the chunk data and generates a THREE.Mesh for that chunk
 World.prototype.parseChunk = function(chunkInfo) {
 	//just extract one region
 	var hThreshold = -1;
@@ -186,7 +208,8 @@ World.prototype.parseChunk = function(chunkInfo) {
 	//return the geometry for this block
 	return geometry;
 }
-				
+
+//renders the chunk at global chunk location cx, cz
 World.prototype.renderChunk = function(cx,cz) {
 	//renders this chunk at world location cx, cz
 	//get the correct region for this chunk

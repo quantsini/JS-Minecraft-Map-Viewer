@@ -14,6 +14,13 @@ RegionFile = function(data, regionLoc) {
 }
 
 RegionFile.prototype.constructor = RegionFile;
+
+/*
+ * readNBTChunk
+ * Returns an array of bytes that corresponds to the NBT payload of a chunk at chunk location x, z
+ * Returns false on error. Returns null on out of range
+ *
+ */
 RegionFile.prototype.readNBTChunk = function (x, z) {
 		if (this.ready) {
 			//load a chunk
