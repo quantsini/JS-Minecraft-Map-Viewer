@@ -32,7 +32,7 @@ body {
 	background-color: #8EE3FA;
 }
 </style>
-		<script type="text/javascript" src="js/query-1.6.1.js"></script>
+		<script type="text/javascript" src="js/jquery-1.6.1.js"></script>
 		<script type="text/javascript" src="js/Detector.js"></script>
 		<script type="text/javascript" src="js/Three.js"></script>
 		<script type="text/javascript" src="js/RequestAnimationFrame.js"></script>
@@ -289,22 +289,22 @@ body {
 				}
 				
 				//this is fucking broken, if you remove this, don't expect drop to work
-				fileContainer.bind('dragenter',function(event) {
+				$(fileContainer).bind('dragenter',function(event) {
 					$(this).css("background","black");
 				});
 				
 				//same here, don't remove this or don't expect drop to work
-				fileContainer.bind('dragover',function(event) {
+				$(fileContainer).bind('dragover',function(event) {
 					event.stopPropagation();
 					event.preventDefault();
 				});
 				
 				
-				fileContainer.bind('dragleave',function(event) {
+				$(fileContainer).bind('dragleave',function(event) {
 					$(this).css("background","white");
 				});
 				
-				fileContainer.bind('drop', function(event) {
+				$(fileContainer).bind('drop', function(event) {
 					event.stopPropagation();
 					event.preventDefault();
 					$("#fileContainer").css("color","white").text("Loading Region File(s)");
