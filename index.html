@@ -28,23 +28,12 @@
 		<script type="text/javascript" src="inflate.js"></script>
 		<script type="text/javascript" src="RegionFile.js"></script>
 		<script type="text/javascript" src="nbt.js"></script>
+		<script type="text/javascript" src="World.js"></script>
 		<script type="text/javascript">
-			var CHUNK_SIZE_X = 16;
-			var CHUNK_SIZE_Y = 128;
-			var CHUNK_SIZE_Z = 16;
-			var BLOCK_SIZE = 64;
 			var SIZE_Y = 640;
 			var SIZE_X = 800;
 			var camera, scene, renderer;
-			var ready;
-			var blockData;
-			var regions = new Array();
-			var renderedChunks = new Array();
-			
-			var chunkBuffer = new Array();
-			var playerChunks = new Array();
-
-			var oldCoords = [null,null];
+			var world = null;
 			scene = new THREE.Scene();
 
 				
@@ -77,9 +66,6 @@
 					water = loadTexture( 'textures/minecraft/water.png' );
 					lava = loadTexture( 'textures/minecraft/lava.png' );
 					
-					
-	 
-	 
 					var textures = loadTexture('textures/minecraft/textures.png');
 					
 					grassMaterial = [
@@ -187,31 +173,32 @@
 					];
 					
 					
-					blockHandler = new BlockHandler();
+					world = new World(scene);
+					
 					smoothStoneBlockType = new BlockType(1, smoothStoneMaterial);
-					blockHandler.addType(smoothStoneBlockType);
+					world.addBlockTexture(smoothStoneBlockType);
 					dirtBlockType = new BlockType(3, dirtMaterial);
-					blockHandler.addType(dirtBlockType);
+					world.addBlockTexture(dirtBlockType);
 					grassBlockType = new BlockType(2, grassMaterial);
-					blockHandler.addType(grassBlockType);
+					world.addBlockTexture(grassBlockType);
 					sandBlockType = new BlockType(12, sandMaterial);
-					blockHandler.addType(sandBlockType);
+					world.addBlockTexture(sandBlockType);
 					woodBlockType = new BlockType(17, woodMaterial);
-					blockHandler.addType(woodBlockType);
+					world.addBlockTexture(woodBlockType);
 					coalBlockType = new BlockType(16, coalMaterial);
-					blockHandler.addType(coalBlockType);
+					world.addBlockTexture(coalBlockType);
 					leafBlockType = new BlockType(18, leafMaterial);
-					blockHandler.addType(leafBlockType);
+					world.addBlockTexture(leafBlockType);
 					cactusBlockType = new BlockType(81, cactusMaterial);
-					blockHandler.addType(cactusBlockType);
+					world.addBlockTexture(cactusBlockType);
 					gravelBlockType = new BlockType(13, gravelMaterial);
-					blockHandler.addType(gravelBlockType);
+					world.addBlockTexture(gravelBlockType);
 					sandstoneBlockType = new BlockType(24, sandstoneMaterial);
-					blockHandler.addType(sandstoneBlockType);
+					world.addBlockTexture(sandstoneBlockType);
 					waterBlockType = new BlockType(9, waterMaterial);
-					blockHandler.addType(waterBlockType);
+					world.addBlockTexture(waterBlockType);
 					lavaBlockType = new BlockType(11, lavaMaterial);
-					blockHandler.addType(lavaBlockType);
+					world.addBlockTexture(lavaBlockType);
 					
 					
 					camera = new THREE.QuakeCamera( {
@@ -229,82 +216,17 @@
 					$(renderer.domElement).css("border","1px solid red").appendTo(container);
 					console.log("renderer setup!");
 					
-				}
-				
-				function parseChunk(chunkInfo) {
-						//just extract one region
-						var hThreshold = -1;
-						var chunkData = chunkInfo["data"];
-						var chunkOffset = chunkInfo["chunkLoc"];
-						var geometry = new THREE.Geometry();
-						
-						//var geometry = false;
-						//for each coordinate
-						for (var x = 0; x < CHUNK_SIZE_X; x++) {
-							for (var y = 0; y < CHUNK_SIZE_Y; y++) {
-								for (var z = 0; z < CHUNK_SIZE_Z; z++) {
-									if (y > hThreshold) {
-										//get the index for the block using the special formula
-										var index = y + ( z * CHUNK_SIZE_Y + ( x * CHUNK_SIZE_Y * CHUNK_SIZE_Z ) );
-										
-										//the block ID for the block at (x,y,z)
-										var blockID = chunkData[index];
-										
-										//not air
-										var cube = undefined;
-										if (blockID != 0) {
-											//get the index for which the faces will be blank facing those adjecent to a block
-											newIndex = getNewBlockIndex(chunkData, x,y,z);
-											
-											//get the GL cube
-											cube = blockHandler.getCorrectGLCube(blockID, newIndex);
-											
-											
-											//merge the cube to the geometry
-											if (cube != undefined) {
-												cube.position.y = y*BLOCK_SIZE;
-												cube.position.x = (x + chunkOffset[0] * 16) * BLOCK_SIZE;
-												cube.position.z = (z + chunkOffset[1] * 16) * BLOCK_SIZE;
-												if (geometry == false) {
-													geometry = cube;
-												}
-												else
-												{
-													GeometryUtils.merge( geometry, cube );
-												}
-											}
-										}
-									}
-								}
-							}
-						}
-						
-						//return the geometry for this block
-						return geometry;
-				}
-				
-				function getNewBlockIndex(chunkData, x,y,z) {
-					var px, nx, py, ny, pz, nz;
-												
-					//{n,p}{x,y,z} is 1 if there is a block adjecent to it.
-					nz = (z > 0 && chunkData[y + ( (z - 1) * CHUNK_SIZE_Y + ( (x) * CHUNK_SIZE_Y * CHUNK_SIZE_Z ) )]) ? 1 : 0;
-					pz = (z < (CHUNK_SIZE_Z-1) && chunkData[y + ( (z + 1) * CHUNK_SIZE_Y + ( (x) * CHUNK_SIZE_Y * CHUNK_SIZE_Z ) )]) ? 1 : 0;
-												
-					px = (x > 0 && chunkData[y + ( (z) * CHUNK_SIZE_Y + ( (x - 1) * CHUNK_SIZE_Y * CHUNK_SIZE_Z ) )]) ? 1 : 0;
-					nx = (x < (CHUNK_SIZE_X-1) && chunkData[y + ( (z) * CHUNK_SIZE_Y + ( (x + 1) * CHUNK_SIZE_Y * CHUNK_SIZE_Z ) )]) ? 1 : 0;
-												
-					ny = (y > 0 && chunkData[(y - 1) + ( (z) * CHUNK_SIZE_Y + ( (x) * CHUNK_SIZE_Y * CHUNK_SIZE_Z ) )]) ? 1 : 0;
-					py = (y < (CHUNK_SIZE_Y-1) && chunkData[(y + 1) + ( (z) * CHUNK_SIZE_Y + ( (x) * CHUNK_SIZE_Y * CHUNK_SIZE_Z ) )]) ? 1 : 0;
-												
-					//sides = { px: true, nx: true, py: true, ny: true, pz: true, nz: true };
-					var newIndex = nz + 2*pz + 2*2*ny + 2*2*2*py + 2*2*2*2*nx + 2*2*2*2*2*px;
-												
-					return newIndex;
-				}
+					updateWorld();
 					
-				function animate() {
-					requestAnimationFrame( animate );
-					render();
+				}
+				
+				function updateWorld() {
+					requestAnimationFrame(updateWorld);
+					_updateWorld();
+				}
+				
+				var haltUpdateWorld = false;
+				function _updateWorld() {
 					var x, y, z, chunkX, chunkZ, regionX, regionZ;
 					x = Math.floor(camera.position.x/BLOCK_SIZE);
 					y = Math.floor(camera.position.y/BLOCK_SIZE);
@@ -317,97 +239,16 @@
 					var chunkCoords = "(" + chunkX + ", " + chunkZ + ")";
 					var regionCoords = "(" + regionX + ", " + regionZ + ")";
 					
+					world.updateWorld({x: x, y: y, z: z});
 					
-					if (oldCoords[0] == null || (oldCoords[0] != chunkX || oldCoords[1] != chunkZ))
-					{
-						ready = true;
-					}
-					
-					if (ready == true) {
-						ready = false;
-						console.log("YEAH");
-						
-						//compute the chunks needed to be rendered
-						playerChunks = new Array();
-						var RADIUS = 3;
-						
-						//chunkX, chunkY
-						for (var lcv = 0; lcv < RADIUS; lcv++) {
-							for (var lcv1 = 0; lcv1 < RADIUS; lcv1++) {
-								playerChunks.push({x: chunkX + (RADIUS-1)/2 - lcv, z:  chunkZ + (RADIUS-1)/2 - lcv1});
-							}
-						}
-						
-						
-						if (chunkBuffer.length != 0) {
-							newChunkBuffer = new Array();
-							for (var lcv = 0; lcv < chunkBuffer.length; lcv++) {
-								remove = true;
-								for (var lcv1 = 0; lcv1 < playerChunks.length; lcv1++) {
-									if (chunkBuffer[lcv].x == playerChunks[lcv1].x && chunkBuffer[lcv].z == playerChunks[lcv1].z) {
-										newChunkBuffer.push(chunkBuffer[lcv]);
-										remove = false;
-									}
-									
-								}
-								
-								if (remove) {
-									console.log("removing mesh");
-									//scene.removeObject(chunkBuffer[lcv].mesh); 
-									//https://github.com/mrdoob/three.js/issues/116
-									var o, ol, zobject;
-									object = chunkBuffer[lcv].mesh;
-									for ( o = scene.__webglObjects.length - 1; o >= 0; o -- ) {
-
-										zobject = scene.__webglObjects[ o ].object;
-
-										if ( object == zobject ) {
-
-											scene.__webglObjects.splice( o, 1 );
-											return;
-
-										}
-
-									}
-								
-								
-								}
-							}
-							
-							chunkBuffer = newChunkBuffer;
-						}
-						//render new chunks
-						
-						
-						$.each(playerChunks, function(index, item) {
-							console.log("trying to render chunk at " + item.x + "," + item.z);
-							if (!chunkRendered(item.x,item.z)) {
-								if (regions.length != 0) {
-									renderChunk(item.x,item.z,regions);
-								}
-							}
-							else
-							{
-								console.log("rendered already");
-							}
-						});
-						
-					}
-					
-					
-					oldCoords = [chunkX, chunkZ];
 					printout("Player: " + coords + " Chunk: " + chunkCoords + " Region: " + regionCoords);
 				}
+
 				
 				
-				function chunkRendered(x,z) {
-					for (var lcv = 0; lcv < chunkBuffer.length; lcv++) {
-						if (chunkBuffer[lcv].x == x && chunkBuffer[lcv].z == z) {
-							return true;
-						}
-					}
-					
-					return false;
+				function animate() {
+					requestAnimationFrame( animate );
+					render();
 				}
 				
 				function render() {
@@ -425,115 +266,63 @@
 				function printout(s) {
 					$("#progress").text(s);
 				}
-					fileContainer = $("#fileContainer");
-					//this is fucking broken, if you remove this, don't expect drop to work
-					fileContainer.bind('dragenter',function(event) {
-						$(this).css("background","black");
-					});
+				
+				fileContainer = $("#fileContainer");
+				//this is fucking broken, if you remove this, don't expect drop to work
+				fileContainer.bind('dragenter',function(event) {
+					$(this).css("background","black");
+				});
+				
+				//same here, don't remove this or don't expect drop to work
+				fileContainer.bind('dragover',function(event) {
+					event.stopPropagation();
+					event.preventDefault();
+				});
+				
+				
+				fileContainer.bind('dragleave',function(event) {
+					$(this).css("background","white");
+				});
+				
+				fileContainer.bind('drop', function(event) {
+					event.stopPropagation();
+					event.preventDefault();
+					var regionFiles = event.originalEvent.dataTransfer.files; 
 					
-					//same here, don't remove this or don't expect drop to work
-					fileContainer.bind('dragover',function(event) {
-						event.stopPropagation();
-						event.preventDefault();
-					});
-					
-					
-					fileContainer.bind('dragleave',function(event) {
-						$(this).css("background","white");
-					});
-					
-					fileContainer.bind('drop', function(event) {
-						event.stopPropagation();
-						event.preventDefault();
-						var regionFiles = event.originalEvent.dataTransfer.files; 
-						
-						if (regionFiles.length == 0)
-						{
-							alert("error loading file");
-							return;
-						}
-						
-						var k = 0;
-						$.each(regionFiles, function(index,region) {
-							var re = new RegExp("\\br.(-{0,1}\\d+).(-{0,1}\\d+).mcr+\\b")
-							var match = re.exec(region.fileName);
-							var regionLoc = {x: parseInt(match[1]), z: parseInt(match[2])};
-							var fr = new FileReader();
-							
-							fr.onerror = function(event) {
-								console.log(event);
-							}
-							
-						
-							fr.onloadend= function(event) {
-								var rLoc = regionLoc;
-								console.log(rLoc);
-								var data = event.target.result;
-								var regionFile = new RegionFile(data, rLoc);
-								regions.push(regionFile);
-								k++;
-								if (k == regionFiles.length) {
-									ready = true;
-								}
-							};
-							
-							fr.readAsBinaryString(region);
-							fr = null;
-						});
-					});
-					
-					
-					function renderChunk(cx,cz, regions) {
-						//renders this chunk at world location cx, cz
-						//get the correct region for this chunk
-						var regionX = Math.floor(cx/32);
-						var regionZ = Math.floor(cz/32);
-						var regionFile = null;
-						
-						$.each(regions, function(index, region) {
-							if (region.regionLoc.x == regionX && region.regionLoc.z == regionZ) {
-								console.log("DERP");
-								regionFile = region;
-							}
-						});
-						
-						if (regionFile != null) {
-							lcv = cx - 32*regionX;
-							lcv1 = cz - 32*regionZ;
-							rawChunk = regionFile.readNBTChunk(lcv,lcv1);
-									
-							if (rawChunk != null && rawChunk != false) {
-								console.log("chunking");
-								chunkNBT = new NBTReader(rawChunk);
-										
-								if (chunkNBT != null) {
-									chunkData = chunkNBT.read(false);
-									blocks = chunkData.root.Level.Blocks;
-									regionOffsetX = regionFile.regionLoc.x * 32;
-									regionOffsetZ = regionFile.regionLoc.z * 32;
-									temp = {chunkLoc: [(lcv + regionOffsetX), (lcv1 + regionOffsetZ)], data: blocks};
-									var g = parseChunk(temp);
-									mesh = new THREE.Mesh( g, new THREE.MeshFaceMaterial() );
-									scene.addObject( mesh );
-									
-									console.log("pushing " + cx + "," + cz);
-									chunkBuffer.push({x: cx, z: cz, mesh: mesh});
-								}
-								else
-								{
-									console.log("error reading chunk NBT");
-								}
-							}
-							else
-							{
-								console.log("no chunk here");
-							}
-						}
-						else
-						{
-							console.log("no chunk exists");
-						}
+					if (regionFiles.length == 0)
+					{
+						alert("error loading file");
+						return;
 					}
+					
+					var k = 0;
+					$.each(regionFiles, function(index,region) {
+						var re = new RegExp("\\br.(-{0,1}\\d+).(-{0,1}\\d+).mcr+\\b")
+						var match = re.exec(region.fileName);
+						var regionLoc = {x: parseInt(match[1]), z: parseInt(match[2])};
+						var fr = new FileReader();
+						
+						fr.onerror = function(event) {
+							console.log(event);
+						}
+						
+					
+						fr.onloadend= function(event) {
+							var rLoc = regionLoc;
+							console.log(rLoc);
+							var data = event.target.result;
+							var regionFile = new RegionFile(data, rLoc);
+							world.addRegion(regionFile);
+							k++;
+							if (k == regionFiles.length) {
+								ready = true;
+							}
+						};
+						
+						fr.readAsBinaryString(region);
+						fr = null;
+					});
+				});
 		});
 		</script>
 	</head>
