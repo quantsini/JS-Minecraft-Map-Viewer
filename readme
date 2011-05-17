@@ -18,3 +18,7 @@ TODO:
    * implement physics and collision detection? (don't want to turn this into a minecraft clone)
    * editing tools - remove, add, change blocks, similar to mcedit
    * orthographic view
+
+
+Uses components from https://github.com/endenizen/MC-Chunk-Loader
+namely the NBT loader.
