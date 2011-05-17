@@ -2,13 +2,19 @@ This is a rudimentary Minecraft viewer using the Three.js WebGL framework.
 
 You can pretty much download this, and open up index.html to see an example map I generated in my singleplayer game.
 
-testData.js - this is the actual data recovered from a region The format is
-regionData = {region: <the region code>, chunks: <an array of chunks> }
+You should be able to drag (multiple) .mcr files directly from your single player games into the area indicated in index.html.
 
-The array of chunks is formulated as follows
-{chunkLoc: <the location of the chunk>, data: <the uncompressed byte array of the chunk, formatted the exact same way as the alpha-infdev NBT chunk format>}
+Issues:
+loading chunks is really slow - i just implemented a naive way to load them
 
-Things to do:
-_LOTS_ of refactoring
-write a JS library to read region data, which is basically a NBT file format.
-Better graphics optimizations
+TODO:
+ high priority
+   * refactoring
+   * make the rendering more efficient
+   * better controls
+ medium priority
+   * be able to read on server minecarft data, perhaps as a node.js or php script
+ maybe do this?
+   * implement physics and collision detection? (don't want to turn this into a minecraft clone)
+   * editing tools - remove, add, change blocks, similar to mcedit
+   * orthographic view
