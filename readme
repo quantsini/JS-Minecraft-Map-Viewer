@@ -7,6 +7,13 @@ You should be able to drag (multiple) .mcr files directly from your single playe
 Issues:
 loading chunks is really slow - i just implemented a naive way to load them
 
+
+Ideas for making the rendering more efficient
+- Use Typed Arrays in the computation and handling of chunks
+- Use Web Workers to compute geometry data for chunks
+- Local optimizations (such as clever data structure management)
+
+
 TODO:
  high priority
    * refactoring
