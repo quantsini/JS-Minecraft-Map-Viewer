@@ -58,6 +58,7 @@ body {
 				}
 				init();
 				animate();
+				updateWorld();
 				
 				function init() {
 					container = $("#container");
@@ -234,7 +235,6 @@ body {
 					camera.position.y = 64 * BLOCK_SIZE;
 					camera.position.z = (0 * 16) * BLOCK_SIZE;
 					
-					updateWorld();
 					
 				}
 				
@@ -267,7 +267,6 @@ body {
 				}
 
 				
-				
 				function animate() {
 					requestAnimationFrame( animate );
 					render();
@@ -289,7 +288,6 @@ body {
 					$("#progress").text(s);
 				}
 				
-				fileContainer = $("#fileContainer");
 				//this is fucking broken, if you remove this, don't expect drop to work
 				fileContainer.bind('dragenter',function(event) {
 					$(this).css("background","black");
