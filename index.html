@@ -8,13 +8,28 @@
 		</title>
 		<link rel="stylesheet" href="reset.css" />
 <style type="text/css">
+body {
+	font-family: Monospace;
+}
 #fileContainer {
  min-height: 100px;
-  width: 100%px;
   border: 3px dashed #ccc;
   margin: 10px;
   padding: 10px;
   font-size: 2em;
+  text-align: center;
+  line-height: 100px;
+}
+
+#progress {
+	padding: 4px;
+	margin: 2px;
+	background-color #cccccc;
+	border: 1px solid black;
+}
+
+#container {
+	background-color: #8EE3FA;
 }
 </style>
 		<script type="text/javascript" src="jquery-1.6.1.js"></script>
@@ -230,10 +245,14 @@
 				
 				var haltUpdateWorld = false;
 				function _updateWorld() {
-					var x, y, z, chunkX, chunkZ, regionX, regionZ;
+					var x, y, z, chunkX, chunkZ, regionX, regionZ, phi, theta;
 					x = Math.floor(camera.position.x/BLOCK_SIZE);
 					y = Math.floor(camera.position.y/BLOCK_SIZE);
 					z = Math.floor(camera.position.z/BLOCK_SIZE);
+					
+					phi = Math.floor(camera.phi * 360/(Math.PI));
+					theta = Math.floor(camera.theta * 360/(Math.PI)) % 360;
+					
 					chunkX = Math.floor(x/16);
 					chunkZ = Math.floor(z/16);
 					regionX = Math.floor(chunkX/32);
@@ -241,10 +260,10 @@
 					var coords = "(" + x + ", " + y + ", " + z + ")";
 					var chunkCoords = "(" + chunkX + ", " + chunkZ + ")";
 					var regionCoords = "(" + regionX + ", " + regionZ + ")";
-					
+					var rotation = "(" + phi + "," + theta + ")";
 					world.updateWorld({x: x, y: y, z: z});
 					
-					printout("Player: " + coords + " Chunk: " + chunkCoords + " Region: " + regionCoords);
+					printout("Player: " + coords + " " + rotation + " Chunk: " + chunkCoords + " Region: " + regionCoords);
 				}
 
 				
@@ -306,12 +325,19 @@
 						var regionLoc = {x: parseInt(match[1]), z: parseInt(match[2])};
 						var fr = new FileReader();
 						
+						resetDragArea = function() {
+								setTimeout(function() {
+									$("#fileContainer").css("background-color","white").css("color","black").text("Dragon region file(s) here");
+								}, 5000);
+						};
 						fr.onerror = function(event) {
 							console.log(event);
+								$("#fileContainer").css("background","red").css("color","black").text("Error loading region file!");
+							resetDragArea();
 						}
 						
 					
-						fr.onloadend= function(event) {
+						fr.onload= function(event) {
 							var rLoc = regionLoc;
 							console.log(rLoc);
 							var data = event.target.result;
@@ -320,7 +346,9 @@
 							k++;
 							if (k == regionFiles.length) {
 								ready = true;
-								$("#fileContainer").css("color","white").text("Region File Loaded(s)");
+								$("#fileContainer").css("background","green").css("color","black").text("Region File Loaded(s)");
+								
+								resetDragArea();
 							}
 						};
 						
@@ -332,10 +360,10 @@
 		</script>
 	</head>
 	<body>
-		<div id="fileContainer" >
+		<div id="fileContainer">
 			Drag region file(s) here.
 		</div>
-		<div id="progress">progress</div>
+		<div id="progress">...</div>
 		<div id="container"></div>
 		Example Map: Download <a href="map/region/r.0.0.mcr">this file</a> then drag it in the space above.
 	</body>
