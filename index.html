@@ -10,10 +10,11 @@
 <style type="text/css">
 #fileContainer {
  min-height: 100px;
-  width: 200px;
+  width: 100%px;
   border: 3px dashed #ccc;
   margin: 10px;
   padding: 10px;
+  font-size: 2em;
 }
 </style>
 		<script type="text/javascript" src="jquery-1.6.1.js"></script>
@@ -30,11 +31,10 @@
 		<script type="text/javascript" src="nbt.js"></script>
 		<script type="text/javascript" src="World.js"></script>
 		<script type="text/javascript">
-			var SIZE_Y = 640;
-			var SIZE_X = 800;
+			var SIZE_Y = 500;
+			var SIZE_X = window.innerWidth;
 			var camera, scene, renderer;
 			var world = null;
-			scene = new THREE.Scene();
 
 				
 			$(function() {
@@ -48,6 +48,7 @@
 					container = $("#container");
 					materials = []
 					
+					scene = new THREE.Scene();
 					var grass_dirt = loadTexture( 'textures/minecraft/grass_dirt.png' ),
 					grass = loadTexture( 'textures/minecraft/grass.png' ),
 					dirt = loadTexture( 'textures/minecraft/dirt.png' ),
@@ -201,20 +202,22 @@
 					world.addBlockTexture(lavaBlockType);
 					
 					
+						
+					console.log("setting up renderer");
+					renderer = new THREE.WebGLRenderer();
+					renderer.setSize( SIZE_X, SIZE_Y );
+					$(renderer.domElement).appendTo(container);
+					console.log("renderer setup!");
+					
+					
 					camera = new THREE.QuakeCamera( {
 						fov: 60, aspect: SIZE_X / SIZE_Y, near: 1, far: 20000,
-						movementSpeed: 500, lookSpeed: 0.075, noFly: false, lookVertical: true, autoForward: false
+						movementSpeed: 500, lookSpeed: 0.075, noFly: false, lookVertical: true, autoForward: false,
 					} );
 					
 					camera.position.x = (0 * 16) * BLOCK_SIZE;
 					camera.position.y = 64 * BLOCK_SIZE;
 					camera.position.z = (0 * 16) * BLOCK_SIZE;
-						
-					console.log("setting up renderer");
-					renderer = new THREE.WebGLRenderer();
-					renderer.setSize( SIZE_X, SIZE_Y );
-					$(renderer.domElement).css("border","1px solid red").appendTo(container);
-					console.log("renderer setup!");
 					
 					updateWorld();
 					
@@ -287,6 +290,7 @@
 				fileContainer.bind('drop', function(event) {
 					event.stopPropagation();
 					event.preventDefault();
+					$("#fileContainer").css("color","white").text("Loading Region File(s)");
 					var regionFiles = event.originalEvent.dataTransfer.files; 
 					
 					if (regionFiles.length == 0)
@@ -316,6 +320,7 @@
 							k++;
 							if (k == regionFiles.length) {
 								ready = true;
+								$("#fileContainer").css("color","white").text("Region File Loaded(s)");
 							}
 						};
 						
@@ -327,11 +332,11 @@
 		</script>
 	</head>
 	<body>
+		<div id="fileContainer" >
+			Drag region file(s) here.
+		</div>
 		<div id="progress">progress</div>
 		<div id="container"></div>
-		<div id="fileContainer" >
-			Drag a region file here
-		</div>
 		Example Map: Download <a href="map/region/r.0.0.mcr">this file</a> then drag it in the space above.
 	</body>
 </html>

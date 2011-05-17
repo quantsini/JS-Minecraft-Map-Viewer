@@ -3,7 +3,7 @@ var CHUNK_SIZE_X = 16;
 var CHUNK_SIZE_Y = 128;
 var CHUNK_SIZE_Z = 16;
 var BLOCK_SIZE = 64;
-var RADIUS = 3;
+var RADIUS = 5;
 
 World = function(scene) {
 	this.scene = scene;
@@ -69,8 +69,9 @@ World.prototype.updateWorld = function(playerCoordinates) {
 								
 				if (remove) {
 					console.log("removing chunk at " + this.chunkBuffer[lcv].x + "," + this.chunkBuffer[lcv].z);
-					//scene.removeObject(chunkBuffer[lcv].mesh); 
-					//https://github.com/mrdoob/three.js/issues/116
+					this.scene.removeObject(this.chunkBuffer[lcv].mesh); 
+					
+					//hack - see https://github.com/mrdoob/three.js/issues/116
 					var o, ol, zobject;
 					object = this.chunkBuffer[lcv].mesh;
 					for ( o = this.scene.__webglObjects.length - 1; o >= 0; o -- ) {
@@ -80,6 +81,8 @@ World.prototype.updateWorld = function(playerCoordinates) {
 							//return;
 						}
 					}
+					//end hack
+					
 				}
 			}
 							
