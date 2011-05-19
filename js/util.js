@@ -62,7 +62,7 @@ function baseConverter(number, ob, nb) {
   if (typeof(number) === 'undefined')     
     return 0;
   number = number.toString();
-  // Created 1997 by Brian Risk.  http://brianrisk.com
+  // Created 1997 by Brian Risk. http://brianrisk.com
   number = number.toUpperCase();
   var list = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
   var dec = 0;
@@ -79,20 +79,14 @@ function baseConverter(number, ob, nb) {
   return number;
 }
 
-//http://stackoverflow.com/questions/1240408/reading-bytes-from-javascript-string
-//answer at top by Borgar (with slight modification to make part faster)
-//http://borgar.net/
+// http://stackoverflow.com/questions/1240408/reading-bytes-from-javascript-string
+// answer at top by Borgar (with slight modification to make part faster)
+// http://borgar.net/
 /*
-function stringToBytes(str) {
-  var ch, st, re = [];
-  var ilen = str.length;
-  for (var i = 0; i < ilen; i++) {
-    re.push(str.charCodeAt(i) ); // get char
-  }
-  // return an array of bytes
-  return re;
-}
-*/
+ * function stringToBytes(str) { var ch, st, re = []; var ilen = str.length; for
+ * (var i = 0; i < ilen; i++) { re.push(str.charCodeAt(i) ); // get char } //
+ * return an array of bytes return re; }
+ */
 
 
 function stringToBytes(str) {
@@ -125,20 +119,17 @@ function get_ms1bit(i)
 }
 
 /*
-function checkBit(value,n,bits)
-{
-    var value = value;
-    if(value & (1<<(bits-n))) { return true; }
-    else { return false; }
-} */
+ * function checkBit(value,n,bits) { var value = value; if(value & (1<<(bits-n))) {
+ * return true; } else { return false; } }
+ */
 
 function makeSigned(n) {
   var isNegative = get_ms1bit(n) == 128;
   if (!isNegative) {
     return n;
   } else {
-    //var n2 = ~n;
-    //return n2 + 1;
+    // var n2 = ~n;
+    // return n2 + 1;
     return -(Math.pow(2, 8) - n);
   }
 }

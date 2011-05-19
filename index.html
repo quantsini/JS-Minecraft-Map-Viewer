@@ -1,37 +1,31 @@
 <!DOCTYPE html>
-
-
 <html lang="en">
 	<head>
-		<title>
-			derp
-		</title>
+		<title>derp</title>
 		<link rel="stylesheet" href="reset.css" />
-<style type="text/css">
-body {
-	font-family: Monospace;
-}
-#fileContainer {
- min-height: 100px;
-  border: 3px dashed #ccc;
-  margin: 10px;
-  padding: 10px;
-  font-size: 2em;
-  text-align: center;
-  line-height: 100px;
-}
-
-#progress {
-	padding: 4px;
-	margin: 2px;
-	background-color #cccccc;
-	border: 1px solid black;
-}
-
-#container {
-	background-color: #8EE3FA;
-}
-</style>
+		<style type="text/css">
+			body {
+				font-family: Monospace;
+			}
+			#fileContainer {
+				min-height: 100px;
+				border: 3px dashed #ccc;
+				margin: 10px;
+				padding: 10px;
+				font-size: 2em;
+				text-align: center;
+				line-height: 100px;
+			}
+			#progress {
+				padding: 4px;
+				margin: 2px;
+				background-color #cccccc;
+				border: 1px solid black;
+			}
+			#container {
+				background-color: #8EE3FA;
+			}
+		</style>
 		<script type="text/javascript" src="js/jquery-1.6.1.js"></script>
 		<script type="text/javascript" src="js/Detector.js"></script>
 		<script type="text/javascript" src="js/Three.js"></script>
@@ -51,19 +45,18 @@ body {
 			var camera, scene, renderer;
 			var world = null;
 
-				
-			$(function() {
+			$( function() {
 				if ( ! Detector.webgl ) {
 					Detector.addGetWebGLMessage();
 				}
 				init();
 				animate();
 				updateWorld();
-				
+
 				function init() {
 					container = $("#container");
 					materials = []
-					
+
 					scene = new THREE.Scene();
 					var grass_dirt = loadTexture( 'textures/minecraft/grass_dirt.png' ),
 					grass = loadTexture( 'textures/minecraft/grass.png' ),
@@ -82,116 +75,115 @@ body {
 					sandstoneBottom = loadTexture( 'textures/minecraft/sandstoneBottom.png' );
 					water = loadTexture( 'textures/minecraft/water.png' );
 					lava = loadTexture( 'textures/minecraft/lava.png' );
-					
+
 					var textures = loadTexture('textures/minecraft/textures.png');
-					
+
 					grassMaterial = [
-						grass_dirt, // right
-						grass_dirt, // left
-						grass, // top
-						dirt, // bottom
-						grass_dirt, // back
-						grass_dirt  // front
+					grass_dirt, // right
+					grass_dirt, // left
+					grass, // top
+					dirt, // bottom
+					grass_dirt, // back
+					grass_dirt  // front
 					];
 					lavaMaterial = [
-						lava, // right
-						lava, // left
-						lava, // top
-						lava, // bottom
-						lava, // back
-						lava  // front
+					lava, // right
+					lava, // left
+					lava, // top
+					lava, // bottom
+					lava, // back
+					lava  // front
 					];
 					waterMaterial = [
-						water, // right
-						water, // left
-						water, // top
-						water, // bottom
-						water, // back
-						water  // front
+					water, // right
+					water, // left
+					water, // top
+					water, // bottom
+					water, // back
+					water  // front
 					];
-					
+
 					sandstoneMaterial = [
-						sandstoneSide, // right
-						sandstoneSide, // left
-						sandstoneTop, // top
-						sandstoneBottom, // bottom
-						sandstoneSide, // back
-						sandstoneSide  // front
+					sandstoneSide, // right
+					sandstoneSide, // left
+					sandstoneTop, // top
+					sandstoneBottom, // bottom
+					sandstoneSide, // back
+					sandstoneSide  // front
 					];
-					
+
 					cactusMaterial = [
-						cactusSide, // right
-						cactusSide, // left
-						cactusTop, // top
-						cactusTop, // bottom
-						cactusSide, // back
-						cactusSide  // front
+					cactusSide, // right
+					cactusSide, // left
+					cactusTop, // top
+					cactusTop, // bottom
+					cactusSide, // back
+					cactusSide  // front
 					];
-					
+
 					gravelMaterial = [
-						gravel, // right
-						gravel, // left
-						gravel, // top
-						gravel, // bottom
-						gravel, // back
-						gravel  // front
+					gravel, // right
+					gravel, // left
+					gravel, // top
+					gravel, // bottom
+					gravel, // back
+					gravel  // front
 					];
-					
+
 					woodMaterial = [
-						woodside, // right
-						woodside, // left
-						woodtopbottom, // top
-						woodtopbottom, // bottom
-						woodside, // back
-						woodside  // front
+					woodside, // right
+					woodside, // left
+					woodtopbottom, // top
+					woodtopbottom, // bottom
+					woodside, // back
+					woodside  // front
 					];
 					coalMaterial = [
-						coal, // right
-						coal, // left
-						coal, // top
-						coal, // bottom
-						coal, // back
-						coal  // front
+					coal, // right
+					coal, // left
+					coal, // top
+					coal, // bottom
+					coal, // back
+					coal  // front
 					];
 					leafMaterial = [
-						leaves, // right
-						leaves, // left
-						leaves, // top
-						leaves, // bottom
-						leaves, // back
-						leaves  // front
+					leaves, // right
+					leaves, // left
+					leaves, // top
+					leaves, // bottom
+					leaves, // back
+					leaves  // front
 					];
-					
+
 					dirtMaterial = [
-						dirt, // right
-						dirt, // left
-						dirt, // top
-						dirt, // bottom
-						dirt, // back
-						dirt  // front
+					dirt, // right
+					dirt, // left
+					dirt, // top
+					dirt, // bottom
+					dirt, // back
+					dirt  // front
 					];
-					
+
 					smoothStoneMaterial = [
-						smoothstone, // right
-						smoothstone, // left
-						smoothstone, // top
-						smoothstone, // bottom
-						smoothstone, // back
-						smoothstone  // front
+					smoothstone, // right
+					smoothstone, // left
+					smoothstone, // top
+					smoothstone, // bottom
+					smoothstone, // back
+					smoothstone  // front
 					];
-					
+
 					sandMaterial = [
-						sand, // right
-						sand, // left
-						sand, // top
-						sand, // bottom
-						sand, // back
-						sand  // front
+					sand, // right
+					sand, // left
+					sand, // top
+					sand, // bottom
+					sand, // back
+					sand  // front
 					];
-					
-					
+
 					world = new World(scene);
-					
+
 					smoothStoneBlockType = new BlockType(1, smoothStoneMaterial);
 					world.addBlockTexture(smoothStoneBlockType);
 					dirtBlockType = new BlockType(3, dirtMaterial);
@@ -216,43 +208,46 @@ body {
 					world.addBlockTexture(waterBlockType);
 					lavaBlockType = new BlockType(11, lavaMaterial);
 					world.addBlockTexture(lavaBlockType);
-					
-					
-						
+
 					console.log("setting up renderer");
 					renderer = new THREE.WebGLRenderer();
 					renderer.setSize( SIZE_X, SIZE_Y );
 					$(renderer.domElement).appendTo(container);
 					console.log("renderer setup!");
-					
-					
-					camera = new THREE.QuakeCamera( {
-						fov: 60, aspect: SIZE_X / SIZE_Y, near: 1, far: 20000,
-						movementSpeed: 500, lookSpeed: 0.075, noFly: false, lookVertical: true, autoForward: false,
+
+					camera = new THREE.QuakeCamera({
+						fov: 60,
+						aspect: SIZE_X / SIZE_Y,
+						near: 1,
+						far: 20000,
+						movementSpeed: 500,
+						lookSpeed: 0.075,
+						noFly: false,
+						lookVertical: true,
+						autoForward: false,
 					} );
-					
+
 					camera.position.x = (0 * 16) * BLOCK_SIZE;
 					camera.position.y = 64 * BLOCK_SIZE;
 					camera.position.z = (0 * 16) * BLOCK_SIZE;
-					
-					
+
 				}
-				
+
 				function updateWorld() {
 					requestAnimationFrame(updateWorld);
 					_updateWorld();
 				}
-				
+
 				var haltUpdateWorld = false;
 				function _updateWorld() {
 					var x, y, z, chunkX, chunkZ, regionX, regionZ, phi, theta;
 					x = Math.floor(camera.position.x/BLOCK_SIZE);
 					y = Math.floor(camera.position.y/BLOCK_SIZE);
 					z = Math.floor(camera.position.z/BLOCK_SIZE);
-					
+
 					phi = Math.floor(camera.phi * 360/(Math.PI));
 					theta = Math.floor(camera.theta * 360/(Math.PI)) % 360;
-					
+
 					chunkX = Math.floor(x/16);
 					chunkZ = Math.floor(z/16);
 					regionX = Math.floor(chunkX/32);
@@ -261,81 +256,85 @@ body {
 					var chunkCoords = "(" + chunkX + ", " + chunkZ + ")";
 					var regionCoords = "(" + regionX + ", " + regionZ + ")";
 					var rotation = "(" + phi + "," + theta + ")";
-					world.updateWorld({x: x, y: y, z: z});
-					
+					world.updateWorld({
+						x: x,
+						y: y,
+						z: z
+					});
+
 					printout("Player: " + coords + " " + rotation + " Chunk: " + chunkCoords + " Region: " + regionCoords);
 				}
 
-				
 				function animate() {
 					requestAnimationFrame( animate );
 					render();
 				}
-				
+
 				function render() {
 					renderer.render( scene, camera );
 				}
-				
+
 				function loadTexture( path ) {
 					var image = new Image();
-					image.onload = function () { texture.needsUpdate = true; };
+					image.onload = function () {
+						texture.needsUpdate = true;
+					};
 					image.src = path;
 					var texture  = new THREE.Texture( image, new THREE.UVMapping(), THREE.ClampToEdgeWrapping, THREE.ClampToEdgeWrapping, THREE.NearestFilter, THREE.LinearMipMapLinearFilter );
-					return new THREE.MeshLambertMaterial( { map: texture } );
+					return new THREE.MeshLambertMaterial({
+						map: texture
+					} );
 				}
-				
+
 				function printout(s) {
 					$("#progress").text(s);
 				}
-				
+
 				//this is fucking broken, if you remove this, don't expect drop to work
-				$(fileContainer).bind('dragenter',function(event) {
+				$("#fileContainer").bind('dragenter', function(event) {
 					$(this).css("background","black");
 				});
-				
 				//same here, don't remove this or don't expect drop to work
-				$(fileContainer).bind('dragover',function(event) {
+				$("#fileContainer").bind('dragover', function(event) {
 					event.stopPropagation();
 					event.preventDefault();
 				});
-				
-				
-				$(fileContainer).bind('dragleave',function(event) {
+				$("#fileContainer").bind('dragleave', function(event) {
 					$(this).css("background","white");
 				});
-				
-				$(fileContainer).bind('drop', function(event) {
+				$("#fileContainer").bind('drop', function(event) {
 					event.stopPropagation();
 					event.preventDefault();
 					$("#fileContainer").css("color","white").text("Loading Region File(s)");
-					var regionFiles = event.originalEvent.dataTransfer.files; 
-					
-					if (regionFiles.length == 0)
-					{
+					var regionFiles = event.originalEvent.dataTransfer.files;
+
+					if (regionFiles.length == 0) {
 						alert("error loading file");
 						return;
 					}
-					
+
 					var k = 0;
 					$.each(regionFiles, function(index,region) {
 						var re = new RegExp("\\br.(-{0,1}\\d+).(-{0,1}\\d+).mcr+\\b")
 						var match = re.exec(region.fileName);
-						var regionLoc = {x: parseInt(match[1]), z: parseInt(match[2])};
+						var regionLoc = {
+							x: parseInt(match[1]),
+							z: parseInt(match[2])
+						};
 						var fr = new FileReader();
-						
+
 						resetDragArea = function() {
-								setTimeout(function() {
-									$("#fileContainer").css("background-color","white").css("color","black").text("Dragon region file(s) here");
-								}, 5000);
+							setTimeout( function() {
+								$("#fileContainer").css("background-color","white").css("color","black").text("Dragon region file(s) here");
+							}, 5000);
 						};
 						fr.onerror = function(event) {
 							console.log(event);
-								$("#fileContainer").css("background","red").css("color","black").text("Error loading region file!");
+							$("#fileContainer").css("background","red").css("color","black").text("Error loading region file!");
 							resetDragArea();
 						}
-						
-					
 						fr.onload= function(event) {
+							/* TODO: use web workers here */
 							var rLoc = regionLoc;
 							console.log(rLoc);
 							var data = event.target.result;
@@ -345,24 +344,27 @@ body {
 							if (k == regionFiles.length) {
 								ready = true;
 								$("#fileContainer").css("background","green").css("color","black").text("Region File Loaded(s)");
-								
+
 								resetDragArea();
 							}
 						};
-						
 						fr.readAsBinaryString(region);
 						fr = null;
 					});
 				});
-		});
+			});
 		</script>
 	</head>
 	<body>
 		<div id="fileContainer">
 			Drag region file(s) here.
 		</div>
-		<div id="progress">...</div>
-		<div id="container"></div>
-		Example Map: Download <a href="map/region/r.0.0.mcr">this file</a> then drag it in the space above.
+		<div id="progress">
+			...
+		</div>
+		<div id="container">
+		</div>
+		Example Map: Download
+		<a href="map/region/r.0.0.mcr">this file</a> then drag it in the space above.
 	</body>
 </html>
