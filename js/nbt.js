@@ -175,6 +175,7 @@ function TAG_String(nbtreader) {
 			return "";
 		} else {
 			this.bytes = this.reader.readBytes(this.byteCount);
+
 			return this.decode();
 		}
 	};
@@ -194,6 +195,7 @@ function TAG_String(nbtreader) {
 			if (ch)
 				str += ch;
 		} while (ch);
+		
 		return str;
 	};
 
@@ -245,9 +247,10 @@ function TAG_Byte_Array(nbtreader) {
 		var type = 1;
 		var length = makeint(this.reader.readBytes(4));
 		var tag = null;
-		var ret = this.reader.data.slice(this.reader.position,
+		var ret = this.reader.data.subarray(this.reader.position,
 				this.reader.position + length - 1);
 		this.reader.position += length;
+		
 		return ret;
 	};
 
@@ -266,6 +269,7 @@ function TAG_Compound(nbtreader) {
 			tag = this.reader.read();
 			if ((tag !== null) && (typeof (tag) !== 'undefined') && !tag['END']) {
 				for ( var k in tag) {
+					
 					obj[k] = tag[k];
 				}
 			}
@@ -294,7 +298,6 @@ TAG_Byte_Array.prototype.readName = readName;
 function NBTReader(data) {
 	this.position = 0;
 	this.data = data;
-
 	this.read = function(typespec) {
 		var type = null;
 		if (!typespec) {
@@ -305,8 +308,13 @@ function NBTReader(data) {
 			type = typespec;
 		}
 
-		var typeStr = '_' + type.toString();
+		if (type instanceof Uint8Array) {
+			typeStr = '_' + type[0].toString();
+		} else {
+			var typeStr = '_' + type.toString();
+		}
 		var name = tags[typeStr];
+
 
 		var tag = null;
 
@@ -358,18 +366,23 @@ function NBTReader(data) {
 		} else {
 			ret = tag.read();
 		}
+
 		return ret;
 	};
 
 	this.readBytes = function(count) {
-		var ret = new Array();
+		
+		var ret = new Uint8Array(count);
 		var start = this.position;
+		var k = 0;
 		for ( var i = start; i < this.data.length & i < start + count; i++) {
-			ret.push(this.data[i]);
+			ret[k++] = this.data[i];
 			this.i++;
-			this.position++;
+			//this.position++;
 		}
-		return ret;
+		
+		this.position = this.position + count;
+		return ret
 	};
 
 }

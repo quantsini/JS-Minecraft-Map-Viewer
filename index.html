@@ -39,22 +39,29 @@
 		<script type="text/javascript" src="js/RegionFile.js"></script>
 		<script type="text/javascript" src="js/nbt.js"></script>
 		<script type="text/javascript" src="js/World.js"></script>
+		<script type="text/javascript" src="js/Stats.js"></script>
 		<script type="text/javascript">
 			var SIZE_Y = 500;
 			var SIZE_X = window.innerWidth;
 			var camera, scene, renderer;
 			var world = null;
+			var stats = null;
 
+			var container;
 			$( function() {
 				if ( ! Detector.webgl ) {
 					Detector.addGetWebGLMessage();
 				}
+				container = $("#container");
+				
+				stats = new Stats();
+					stats.domElement.style.position = 'absolute';
+					stats.domElement.style.top = '0px';
+					container.append( stats.domElement );
 				init();
 				animate();
 				updateWorld();
-
-				function init() {
-					container = $("#container");
+								function init() {
 					materials = []
 
 					scene = new THREE.Scene();
@@ -268,6 +275,7 @@
 				function animate() {
 					requestAnimationFrame( animate );
 					render();
+					stats.update();
 				}
 
 				function render() {
@@ -325,7 +333,7 @@
 
 						resetDragArea = function() {
 							setTimeout( function() {
-								$("#fileContainer").css("background-color","white").css("color","black").text("Dragon region file(s) here");
+								$("#fileContainer").css("background-color","white").css("color","black").text("Drag region file(s) here");
 							}, 5000);
 						};
 						fr.onerror = function(event) {
@@ -336,7 +344,6 @@
 						fr.onload= function(event) {
 							/* TODO: use web workers here */
 							var rLoc = regionLoc;
-							console.log(rLoc);
 							var data = event.target.result;
 							var regionFile = new RegionFile(data, rLoc);
 							world.addRegion(regionFile);
@@ -364,7 +371,11 @@
 		</div>
 		<div id="container">
 		</div>
-		Example Map: Download
-		<a href="map/region/r.0.0.mcr">this file</a> then drag it in the space above.
+		<div>
+			Example Map: Download
+			<a href="map/region/r.0.0.mcr">this file</a> then drag it in the space above.
+		</div>
+		<div id="debug">
+		</div>
 	</body>
 </html>

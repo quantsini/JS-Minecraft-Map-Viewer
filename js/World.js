@@ -45,10 +45,16 @@ World.prototype.updateWorld = function(playerCoordinates) {
 	var x = playerCoordinates.x;
 	var y = playerCoordinates.y;
 	var z = playerCoordinates.z;
+	
+	// chunk coordinates
 	var chunkX = Math.floor(x/16);
 	var chunkZ = Math.floor(z/16);
+	
+	// region coordinates
 	var regionX = Math.floor(chunkX/32);
 	var regionZ = Math.floor(chunkZ/32);
+	
+	// encapsulate coordinates
 	var coords = "(" + x + ", " + y + ", " + z + ")";
 	var chunkCoords = "(" + chunkX + ", " + chunkZ + ")";
 	var regionCoords = "(" + regionX + ", " + regionZ + ")";
@@ -60,6 +66,7 @@ World.prototype.updateWorld = function(playerCoordinates) {
 		this.ready = true;
 	}
 	
+	// ready makes sure this is called only once
 	if (this.ready == true) {
 		this.ready = false;	
 		// compute the chunks needed to be rendered
@@ -90,6 +97,7 @@ World.prototype.updateWorld = function(playerCoordinates) {
 					// this.chunkBuffer[lcv].x + "," + this.chunkBuffer[lcv].z);
 					this.scene.removeObject(this.chunkBuffer[lcv].mesh); 
 					
+					
 					// hack - see https://github.com/mrdoob/three.js/issues/116
 					var o, ol, zobject;
 					object = this.chunkBuffer[lcv].mesh;
@@ -111,13 +119,9 @@ World.prototype.updateWorld = function(playerCoordinates) {
 		// render new chunks
 		thisObject = this;
 		$.each(this.playerChunks, function(index, item) {
-			// console.log("trying to render chunk at " + item.x + "," +
-			// item.z);
-			if (!(thisObject.chunkRendered(item.x,item.z))) {
+			if (!(thisObject.__chunkRendered(item.x,item.z))) {
 				if (thisObject.regions.length != 0) {
-					thisObject.renderChunk(item.x,item.z);
-					// console.log("rendered chunk at " + item.x + "," +
-					// item.z);
+					thisObject.__renderChunk(item.x,item.z);
 				}
 			}
 		});
@@ -129,7 +133,7 @@ World.prototype.updateWorld = function(playerCoordinates) {
 
 /* private methods */
 // checks if chunk x,z is rendered
-World.prototype.chunkRendered = function(x,z) {
+World.prototype.__chunkRendered = function(x,z) {
 	for (var lcv = 0; lcv < this.chunkBuffer.length; lcv++) {
 		if (this.chunkBuffer[lcv].x == x && this.chunkBuffer[lcv].z == z) {
 			return true;
@@ -139,7 +143,7 @@ World.prototype.chunkRendered = function(x,z) {
 }
 
 // parses the chunk data and generates a THREE.Mesh for that chunk
-World.prototype.buildMesh = function(chunkInfo) {
+World.prototype.__buildMesh = function(chunkInfo) {
 	// just extract one region
 	var hThreshold = -1;
 	var chunkData = chunkInfo["data"];
@@ -186,7 +190,7 @@ World.prototype.buildMesh = function(chunkInfo) {
 }
 
 // renders the chunk at global chunk location cx, cz
-World.prototype.renderChunk = function(cx,cz, tempCallback) {
+World.prototype.__renderChunk = function(cx,cz, tempCallback) {
 	// renders this chunk at world location cx, cz
 	// get the correct region for this chunk
 	var regionX = Math.floor(cx/32);
@@ -210,13 +214,13 @@ World.prototype.renderChunk = function(cx,cz, tempCallback) {
 			regionOffsetZ = regionFile.regionLoc.z * 32;
 			temp = {chunkLoc: [(lcx + regionOffsetX), (lcz + regionOffsetZ)], data: rawChunk};
 			
-			var g = this.buildMesh(temp);
+			var g = this.__buildMesh(temp);
 			
 			if (g) {
-			mesh = new THREE.Mesh( g, new THREE.MeshFaceMaterial() );
-			this.scene.addObject( mesh )
-			
-			this.chunkBuffer.push({x: cx, z: cz, mesh: mesh});
+				mesh = new THREE.Mesh( g, new THREE.MeshFaceMaterial() );
+				this.scene.addObject( mesh )
+				
+				this.chunkBuffer.push({x: cx, z: cz, mesh: mesh});
 			}
 		}
 	}

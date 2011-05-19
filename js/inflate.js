@@ -125,7 +125,7 @@ function construct(h, length, n) {
 	var symbol; /* current symbol when stepping through length[] */
 	var len; /* current length when stepping through h->count[] */
 	var left; /* number of possible codes left of current length */
-	var offs = new Array(MAXBITS + 1); /*
+	var offs = new Uint32Array(MAXBITS + 1); /*
 										 * offsets in symbol table for each
 										 * length
 										 */
@@ -237,12 +237,12 @@ function stored(s) {
  */
 function fixed(s) {
 
-	lencode = new Huffman(new Array(MAXBITS + 1), new Array(FIXLCODES));
-	distcode = new Huffman(new Array(MAXBITS + 1), new Array(MAXDCODES));
+	lencode = new Huffman(new Uint32Array(MAXBITS + 1), new Uint32Array(FIXLCODES));
+	distcode = new Huffman(new Uint32Array(MAXBITS + 1), new Uint32Array(MAXDCODES));
 
 	if (!fixedDone) {
 		var symbol;
-		var lengths = new Array(FIXLCODES);
+		var lengths = new Uint32Array(FIXLCODES);
 
 		/* literal/length table */
 		for (symbol = 0; symbol < 144; symbol++)
@@ -345,11 +345,11 @@ function dynamic(s) {
 	var nlen, ndist, ncode; /* number of lengths in descriptor */
 	var index; /* index of lengths[] */
 	var err; /* construct() return value */
-	var lengths = new Array(MAXCODES); /* descriptor code lengths */
-	var lencnt = new Array(MAXBITS + 1);
-	var lensym = new Array(MAXLCODES); /* lencode memory */
-	var distcnt = new Array(MAXBITS + 1);
-	var distsym = new Array(MAXDCODES); /* distcode memory */
+	var lengths = new Uint32Array(MAXCODES); /* descriptor code lengths */
+	var lencnt = new Uint32Array(MAXBITS + 1);
+	var lensym = new Uint32Array(MAXLCODES); /* lencode memory */
+	var distcnt = new Uint32Array(MAXBITS + 1);
+	var distsym = new Uint32Array(MAXDCODES); /* distcode memory */
 	lencode = new Huffman(lencnt, lensym); /* length code */
 	distcode = new Huffman(distcnt, distsym); /* distance code */
 	var order = /* permutation of code length codes */
@@ -408,7 +408,7 @@ function dynamic(s) {
 		return -7; /* only allow incomplete codes if just one code */
 
 	/* build huffman table for distance codes */
-	err = construct(distcode, lengths.slice(nlen), ndist);
+	err = construct(distcode, lengths.subarray(nlen), ndist);
 	if (err < 0 || (err > 0 && ndist - distcode.count[0] != 1))
 		return -8; /* only allow incomplete codes if just one code */
 
@@ -633,7 +633,7 @@ source) /* source byte array */
 	var err; /* return value */
 
 	/* return if bits() or decode() tries to read past available input */
-	try {
+	//try {
 		do {
 			last = bits(s, 1); /* one if last block */
 			type = bits(s, 2); /* block type 0..3 */
@@ -642,9 +642,9 @@ source) /* source byte array */
 			if (err != 0)
 				break; /* return with error */
 		} while (!last);
-	} catch (e) {
+	/*} catch (e) {
 		err = 2;
-	}
+	}*/
 
 	/* update the lengths and return */
 	if (err <= 0) {
