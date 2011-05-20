@@ -1,16 +1,43 @@
 RegionFile = function(data, regionLoc) {
+	this.multiThreaded = true;
 	this.regionLoc = regionLoc;
 	this.offsets = new Uint32Array(1024);
 	this.reader = new DataReader(data);
-
+	this.data = data;
 	// extract header information
 	for ( var lcv = 0; lcv < 1024; lcv++) {
 		var k = this.reader.readInteger32();
 
 		this.offsets[lcv] = k;
 	}
+	
+	//each regionfile has it's own worker thread to read chunks. up to 4 total region threads can be operating at a time.
+	this.worker = new Worker('js/readchunk.js');
 }
 
+/*
+ * setCall sets the callback function for when a chunk is read into memory
+ */
+RegionFile.prototype.setCall = function(f) {
+	this.callback = f;
+	var thisObject = this;
+	this.worker.onmessage = function(event) {
+		if (event.data.type) {
+			//console.log(event.data.data);
+		} else {
+			if (thisObject.callback) {
+				var blocks = event.data.blocks;
+				var cx = event.data.cx;
+				var cz = event.data.cz;
+				thisObject.callback(blocks,cx,cz);
+			}
+			else
+			{
+				console.log("wtf");
+			}
+		}
+	}
+}
 RegionFile.prototype.constructor = RegionFile;
 
 /*
@@ -21,12 +48,20 @@ RegionFile.prototype.constructor = RegionFile;
  * 
  * returns false if this chunk doesn't exist
  */
-RegionFile.prototype.readChunk = function(x, z, callback) {
-	/*
-	 * worker = new Worker('readchunk.js'); worker.onmessage = function(event) {
-	 * callback(event.data); } worker.postMessage({r: reader, x: x, z: z});
-	 * 
-	 */
+RegionFile.prototype.readChunk = function(x, z, cx, cz) {
+	if (this.multiThreaded) {
+	this.worker.postMessage( {
+		d : this.data,
+		x : x,
+		z : z,
+		o : this.offsets,
+		cx : cx,
+		cz : cz
+	});
+	
+	return false;
+	}
+	else {
 	var rawChunk = this.__readNBTChunk(x, z);
 
 	if (rawChunk) {
@@ -34,90 +69,38 @@ RegionFile.prototype.readChunk = function(x, z, callback) {
 		var chunkData = chunkNBT.read(false);
 		var blocks = chunkData.root.Level.Blocks;
 		var retBlocks = new Uint8Array(16 * 16 * 128);
-		var retIndexes = new Uint8Array(16 * 16 * 128);
 
 		for ( var x = 0; x < CHUNK_SIZE_X; x++) {
 			for ( var y = 0; y < CHUNK_SIZE_Y; y++) {
 				for ( var z = 0; z < CHUNK_SIZE_Z; z++) {
-					// get the index for the block using the special formula
+					// get the index for
+					// the block using
+					// the special
+					// formula
 					var index = y
 							+ (z * CHUNK_SIZE_Y + (x * CHUNK_SIZE_Y * CHUNK_SIZE_Z));
-
-					// the block ID for the block at (x,y,z)
-					var blockID = blocks[index];
-
-					// not air
+					// the
+					// block
+					// ID
+					// for
+					// the
+					// block
+					// at
+					// (x,y,z)
+					var blockID = blocks[index]; // not air
 					if (blockID != 0) {
 						// get the index for which the faces will be blank
 						// facing those adjecent to a block
 						retBlocks[index] = blockID;
-						retIndexes[index] = this.__getNewBlockIndex(blocks, x,
-								y, z);
 					}
 				}
 			}
 		}
-		return [ retBlocks, retIndexes ];
+		return retBlocks
 	} else {
 		return false;
 	}
-
-}
-
-// gets the block index of a block at x,y,z relative to a chunk.
-RegionFile.prototype.__getNewBlockIndex = function(chunkData, x, y, z) {
-	var px, nx, py, ny, pz, nz;
-
-	// {n,p}{x,y,z} is 1 if there is a block adjecent to it.
-	nz = (z == 0 || chunkData[y
-			+ ((z - 1) * CHUNK_SIZE_Y + ((x) * CHUNK_SIZE_Y * CHUNK_SIZE_Z))]) ? 1
-			: 0;
-	pz = (z == (CHUNK_SIZE_Z - 1) || chunkData[y
-			+ ((z + 1) * CHUNK_SIZE_Y + ((x) * CHUNK_SIZE_Y * CHUNK_SIZE_Z))]) ? 1
-			: 0;
-
-	px = (x == 0 || chunkData[y
-			+ ((z) * CHUNK_SIZE_Y + ((x - 1) * CHUNK_SIZE_Y * CHUNK_SIZE_Z))]) ? 1
-			: 0;
-	nx = (x == (CHUNK_SIZE_X - 1) || chunkData[y
-			+ ((z) * CHUNK_SIZE_Y + ((x + 1) * CHUNK_SIZE_Y * CHUNK_SIZE_Z))]) ? 1
-			: 0;
-
-	ny = (y == 0 || chunkData[(y - 1)
-			+ ((z) * CHUNK_SIZE_Y + ((x) * CHUNK_SIZE_Y * CHUNK_SIZE_Z))]) ? 1
-			: 0;
-	py = (y == (CHUNK_SIZE_Y - 1)|| chunkData[(y + 1)
-			+ ((z) * CHUNK_SIZE_Y + ((x) * CHUNK_SIZE_Y * CHUNK_SIZE_Z))]) ? 1
-			: 0;
-
-	/*
-	 	// {n,p}{x,y,z} is 1 if there is a block adjecent to it.
-	nz = (z > 0 && chunkData[y
-			+ ((z - 1) * CHUNK_SIZE_Y + ((x) * CHUNK_SIZE_Y * CHUNK_SIZE_Z))]) ? 1
-			: 0;
-	pz = (z < (CHUNK_SIZE_Z - 1) && chunkData[y
-			+ ((z + 1) * CHUNK_SIZE_Y + ((x) * CHUNK_SIZE_Y * CHUNK_SIZE_Z))]) ? 1
-			: 0;
-
-	px = (x > 0 && chunkData[y
-			+ ((z) * CHUNK_SIZE_Y + ((x - 1) * CHUNK_SIZE_Y * CHUNK_SIZE_Z))]) ? 1
-			: 0;
-	nx = (x < (CHUNK_SIZE_X - 1) && chunkData[y
-			+ ((z) * CHUNK_SIZE_Y + ((x + 1) * CHUNK_SIZE_Y * CHUNK_SIZE_Z))]) ? 1
-			: 0;
-
-	ny = (y > 0 && chunkData[(y - 1)
-			+ ((z) * CHUNK_SIZE_Y + ((x) * CHUNK_SIZE_Y * CHUNK_SIZE_Z))]) ? 1
-			: 0;
-	py = (y < (CHUNK_SIZE_Y - 1) && chunkData[(y + 1)
-			+ ((z) * CHUNK_SIZE_Y + ((x) * CHUNK_SIZE_Y * CHUNK_SIZE_Z))]) ? 1
-			: 0;
-	 */
-	// sides = { px: true, nx: true, py: true, ny: true, pz: true, nz: true };
-	var newIndex = nz + 2 * pz + 2 * 2 * ny + 2 * 2 * 2 * py + 2 * 2 * 2 * 2
-			* nx + 2 * 2 * 2 * 2 * 2 * px;
-
-	return newIndex;
+	}
 }
 
 /*

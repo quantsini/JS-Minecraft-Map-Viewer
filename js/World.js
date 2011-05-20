@@ -4,6 +4,7 @@ var CHUNK_SIZE_Y = 128;
 var CHUNK_SIZE_Z = 16;
 var BLOCK_SIZE = 64;
 var RADIUS = 5;
+var MULTITHREADED = false;
 
 World = function(scene) {
 	this.scene = scene;
@@ -13,14 +14,48 @@ World = function(scene) {
 	this.chunkBuffer = new Array();
 	this.playerChunks = new Array();
 	this.oldCoords = [null, null];
+	
+	var worldObject = this;
+	
+	this.callbackFunction = function(rawChunk, cx, cz){		
+		/*
+		 * This is a big bottleneck, it takes really long time to build this mesh.
+		 */
+		if (rawChunk) {
+			var now = new Date();
+			var g = worldObject.__buildMesh(rawChunk);
+			
+			if (g) {
+				//generate a mesh
+				var mesh = new THREE.Mesh( g, new THREE.MeshFaceMaterial() );
+				//mesh = g;
+				//set the position of this mesh 
+				mesh.position.x = mesh.position.x + cx * 16 * BLOCK_SIZE;
+				mesh.position.z = mesh.position.z + cz * 16 * BLOCK_SIZE;
+				
+				//add this mesh to the scene
+				worldObject.scene.addObject( mesh )
+				
+				//keep track of all rendered meshes
+				worldObject.chunkBuffer.push({x: cx, z: cz, mesh: mesh});
+			}
+		}
+	}
+	
+	
 }
 
 World.prototype.constructor = World;
+
 
 /*
  * addRegion This method will add a regionfile to this world.
  */
 World.prototype.addRegion = function(region) {
+	region.multiThreaded = MULTITHREADED;
+	
+	region.setCall(this.callbackFunction);
+	
 	this.regions.push(region);
 }
 
@@ -53,13 +88,7 @@ World.prototype.updateWorld = function(playerCoordinates) {
 	// region coordinates
 	var regionX = Math.floor(chunkX/32);
 	var regionZ = Math.floor(chunkZ/32);
-	
-	// encapsulate coordinates
-	var coords = "(" + x + ", " + y + ", " + z + ")";
-	var chunkCoords = "(" + chunkX + ", " + chunkZ + ")";
-	var regionCoords = "(" + regionX + ", " + regionZ + ")";
-	
-	
+
 	// entered a new chunk
 	if (this.oldCoords[0] == null || (this.oldCoords[0] != chunkX || this.oldCoords[1] != chunkZ))
 	{
@@ -117,7 +146,7 @@ World.prototype.updateWorld = function(playerCoordinates) {
 		}
 		
 		// render new chunks
-		thisObject = this;
+		var thisObject = this;
 		$.each(this.playerChunks, function(index, item) {
 			if (!(thisObject.__chunkRendered(item.x,item.z))) {
 				if (thisObject.regions.length != 0) {
@@ -142,13 +171,68 @@ World.prototype.__chunkRendered = function(x,z) {
 	return false;
 }
 
+//gets the block index of a block at x,y,z relative to a chunk.
+World.prototype.__getNewBlockIndex = function(chunkData, x, y, z) {
+	var px, nx, py, ny, pz, nz;
+
+	// {n,p}{x,y,z} is 1 if there is a block adjecent to it.
+	nz = (z == 0 || chunkData[y
+			+ ((z - 1) * CHUNK_SIZE_Y + ((x) * CHUNK_SIZE_Y * CHUNK_SIZE_Z))]) ? 1
+			: 0;
+	pz = (z == (CHUNK_SIZE_Z - 1) || chunkData[y
+			+ ((z + 1) * CHUNK_SIZE_Y + ((x) * CHUNK_SIZE_Y * CHUNK_SIZE_Z))]) ? 1
+			: 0;
+
+	px = (x == 0 || chunkData[y
+			+ ((z) * CHUNK_SIZE_Y + ((x - 1) * CHUNK_SIZE_Y * CHUNK_SIZE_Z))]) ? 1
+			: 0;
+	nx = (x == (CHUNK_SIZE_X - 1) || chunkData[y
+			+ ((z) * CHUNK_SIZE_Y + ((x + 1) * CHUNK_SIZE_Y * CHUNK_SIZE_Z))]) ? 1
+			: 0;
+
+	ny = (y == 0 || chunkData[(y - 1)
+			+ ((z) * CHUNK_SIZE_Y + ((x) * CHUNK_SIZE_Y * CHUNK_SIZE_Z))]) ? 1
+			: 0;
+	py = (y == (CHUNK_SIZE_Y - 1)|| chunkData[(y + 1)
+			+ ((z) * CHUNK_SIZE_Y + ((x) * CHUNK_SIZE_Y * CHUNK_SIZE_Z))]) ? 1
+			: 0;
+
+	/*
+	 	// {n,p}{x,y,z} is 1 if there is a block adjecent to it.
+	nz = (z > 0 && chunkData[y
+			+ ((z - 1) * CHUNK_SIZE_Y + ((x) * CHUNK_SIZE_Y * CHUNK_SIZE_Z))]) ? 1
+			: 0;
+	pz = (z < (CHUNK_SIZE_Z - 1) && chunkData[y
+			+ ((z + 1) * CHUNK_SIZE_Y + ((x) * CHUNK_SIZE_Y * CHUNK_SIZE_Z))]) ? 1
+			: 0;
+
+	px = (x > 0 && chunkData[y
+			+ ((z) * CHUNK_SIZE_Y + ((x - 1) * CHUNK_SIZE_Y * CHUNK_SIZE_Z))]) ? 1
+			: 0;
+	nx = (x < (CHUNK_SIZE_X - 1) && chunkData[y
+			+ ((z) * CHUNK_SIZE_Y + ((x + 1) * CHUNK_SIZE_Y * CHUNK_SIZE_Z))]) ? 1
+			: 0;
+
+	ny = (y > 0 && chunkData[(y - 1)
+			+ ((z) * CHUNK_SIZE_Y + ((x) * CHUNK_SIZE_Y * CHUNK_SIZE_Z))]) ? 1
+			: 0;
+	py = (y < (CHUNK_SIZE_Y - 1) && chunkData[(y + 1)
+			+ ((z) * CHUNK_SIZE_Y + ((x) * CHUNK_SIZE_Y * CHUNK_SIZE_Z))]) ? 1
+			: 0;
+	 */
+	// sides = { px: true, nx: true, py: true, ny: true, pz: true, nz: true };
+	var newIndex = nz + 2 * pz + 2 * 2 * ny + 2 * 2 * 2 * py + 2 * 2 * 2 * 2
+			* nx + 2 * 2 * 2 * 2 * 2 * px;
+
+	return newIndex;
+}
+
 // parses the chunk data and generates a THREE.Mesh for that chunk
-World.prototype.__buildMesh = function(chunkInfo) {
+World.prototype.__buildMesh = function(chunkData) {
 	// just extract one region
 	var hThreshold = -1;
-	var chunkData = chunkInfo["data"];
-	var chunkOffset = chunkInfo["chunkLoc"];
 	var geometry = new THREE.Geometry();
+	//var group = new THREE.Object3D();
 	
 	
 	// for each coordinate
@@ -160,22 +244,23 @@ World.prototype.__buildMesh = function(chunkInfo) {
 					var index = y + ( z * CHUNK_SIZE_Y + ( x * CHUNK_SIZE_Y * CHUNK_SIZE_Z ) );
 					
 					// the block ID for the block at (x,y,z)
-					var blockID = chunkData[0][index];
-					var newIndex = chunkData[1][index];
+					var blockID = chunkData[index];
+					var newIndex = this.__getNewBlockIndex(chunkData, x, y, z);
 					
 					// not air
 					var cube = undefined;
 					if (blockID != 0) {
 						// get the GL cube
-						
 						cube = this.blockHandler.getCorrectGLCube(blockID, newIndex);
 						
 						// merge the cube to the geometry
 						if (cube) {
 							cube.position.y = y * BLOCK_SIZE;
-							cube.position.x = (x + chunkOffset[0] * 16) * BLOCK_SIZE;
-							cube.position.z = (z + chunkOffset[1] * 16) * BLOCK_SIZE;
-
+							cube.position.x = x * BLOCK_SIZE;
+							cube.position.z = z * BLOCK_SIZE;
+							cube.matrixAutoUpdate = false;
+							cube.updateMatrix();
+							//group.addChild(cube);
 							GeometryUtils.merge( geometry, cube );
 
 						}
@@ -185,6 +270,7 @@ World.prototype.__buildMesh = function(chunkInfo) {
 		}
 	}
 	
+	//return group;
 	// return the geometry for this block
 	return geometry;
 }
@@ -206,22 +292,15 @@ World.prototype.__renderChunk = function(cx,cz, tempCallback) {
 	
 	if (regionFile != null) {
 		// get the local chunk coordinates
-		lcx = cx - 32*regionX;
-		lcz = cz - 32*regionZ;
-		rawChunk = regionFile.readChunk(lcx,lcz);
-		if (rawChunk) {
-			regionOffsetX = regionFile.regionLoc.x * 32;
-			regionOffsetZ = regionFile.regionLoc.z * 32;
-			temp = {chunkLoc: [(lcx + regionOffsetX), (lcz + regionOffsetZ)], data: rawChunk};
-			
-			var g = this.__buildMesh(temp);
-			
-			if (g) {
-				mesh = new THREE.Mesh( g, new THREE.MeshFaceMaterial() );
-				this.scene.addObject( mesh )
-				
-				this.chunkBuffer.push({x: cx, z: cz, mesh: mesh});
-			}
+		var lcx = cx - 32*regionFile.regionLoc.x;
+		var lcz = cz - 32*regionFile.regionLoc.z;
+		
+
+		//read a chunk at local coordinates lcx, lcz
+		chunkData = regionFile.readChunk(lcx, lcz, cx, cz);
+		
+		if (! MULTITHREADED) {
+			this.callbackFunction(chunkData,lcx, lcz, cx, cz);
 		}
 	}
 }

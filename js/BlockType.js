@@ -36,8 +36,8 @@ BlockType = function(t, m, s) {
 									pz : 1 - pz,
 									nz : 1 - nz
 								};
-								cubes.push(new THREE.Cube(s[0], s[1], s[2], 1,
-										1, 1, material, false, sides));
+								var cubeMesh = new THREE.Mesh(new THREE.Cube(s[0], s[1], s[2], 1, 1, 1, material,false, sides), new THREE.MeshFaceMaterial() );
+								cubes.push(cubeMesh);
 							}
 
 						}
@@ -72,8 +72,8 @@ BlockType.prototype.isType = function(t) {
  * 
  */
 BlockType.prototype.getCubeMesh = function(index) {
-	if (index == 63) {
+	if (index == 63) { // 63 is a cube that has no faces, optimization
 		return undefined;
 	}
-	return new THREE.Mesh(this.cubes[index]);
+	return this.cubes[index];
 }
