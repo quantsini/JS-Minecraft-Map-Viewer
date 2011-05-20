@@ -19,24 +19,24 @@ World = function(scene) {
 	
 	this.callbackFunction = function(rawChunk, cx, cz){		
 		/*
-		 * This is a big bottleneck, it takes really long time to build this mesh.
+		 * This is a big bottleneck, it takes really long time to build this
+		 * mesh.
 		 */
 		if (rawChunk) {
-			var now = new Date();
 			var g = worldObject.__buildMesh(rawChunk);
 			
 			if (g) {
-				//generate a mesh
+				// generate a mesh
 				var mesh = new THREE.Mesh( g, new THREE.MeshFaceMaterial() );
-				//mesh = g;
-				//set the position of this mesh 
+				// mesh = g;
+				// set the position of this mesh
 				mesh.position.x = mesh.position.x + cx * 16 * BLOCK_SIZE;
 				mesh.position.z = mesh.position.z + cz * 16 * BLOCK_SIZE;
 				
-				//add this mesh to the scene
+				// add this mesh to the scene
 				worldObject.scene.addObject( mesh )
 				
-				//keep track of all rendered meshes
+				// keep track of all rendered meshes
 				worldObject.chunkBuffer.push({x: cx, z: cz, mesh: mesh});
 			}
 		}
@@ -54,7 +54,12 @@ World.prototype.constructor = World;
 World.prototype.addRegion = function(region) {
 	region.multiThreaded = MULTITHREADED;
 	
-	region.setCall(this.callbackFunction);
+	
+	if (MULTITHREADED) {
+		region.setCall(this.callbackFunction);
+	} else {
+		region.setCall(undefined);
+	}
 	
 	this.regions.push(region);
 }
@@ -171,7 +176,7 @@ World.prototype.__chunkRendered = function(x,z) {
 	return false;
 }
 
-//gets the block index of a block at x,y,z relative to a chunk.
+// gets the block index of a block at x,y,z relative to a chunk.
 World.prototype.__getNewBlockIndex = function(chunkData, x, y, z) {
 	var px, nx, py, ny, pz, nz;
 
@@ -198,27 +203,20 @@ World.prototype.__getNewBlockIndex = function(chunkData, x, y, z) {
 			: 0;
 
 	/*
-	 	// {n,p}{x,y,z} is 1 if there is a block adjecent to it.
-	nz = (z > 0 && chunkData[y
-			+ ((z - 1) * CHUNK_SIZE_Y + ((x) * CHUNK_SIZE_Y * CHUNK_SIZE_Z))]) ? 1
-			: 0;
-	pz = (z < (CHUNK_SIZE_Z - 1) && chunkData[y
-			+ ((z + 1) * CHUNK_SIZE_Y + ((x) * CHUNK_SIZE_Y * CHUNK_SIZE_Z))]) ? 1
-			: 0;
-
-	px = (x > 0 && chunkData[y
-			+ ((z) * CHUNK_SIZE_Y + ((x - 1) * CHUNK_SIZE_Y * CHUNK_SIZE_Z))]) ? 1
-			: 0;
-	nx = (x < (CHUNK_SIZE_X - 1) && chunkData[y
-			+ ((z) * CHUNK_SIZE_Y + ((x + 1) * CHUNK_SIZE_Y * CHUNK_SIZE_Z))]) ? 1
-			: 0;
-
-	ny = (y > 0 && chunkData[(y - 1)
-			+ ((z) * CHUNK_SIZE_Y + ((x) * CHUNK_SIZE_Y * CHUNK_SIZE_Z))]) ? 1
-			: 0;
-	py = (y < (CHUNK_SIZE_Y - 1) && chunkData[(y + 1)
-			+ ((z) * CHUNK_SIZE_Y + ((x) * CHUNK_SIZE_Y * CHUNK_SIZE_Z))]) ? 1
-			: 0;
+	 * // {n,p}{x,y,z} is 1 if there is a block adjecent to it. nz = (z > 0 &&
+	 * chunkData[y + ((z - 1) * CHUNK_SIZE_Y + ((x) * CHUNK_SIZE_Y *
+	 * CHUNK_SIZE_Z))]) ? 1 : 0; pz = (z < (CHUNK_SIZE_Z - 1) && chunkData[y +
+	 * ((z + 1) * CHUNK_SIZE_Y + ((x) * CHUNK_SIZE_Y * CHUNK_SIZE_Z))]) ? 1 : 0;
+	 * 
+	 * px = (x > 0 && chunkData[y + ((z) * CHUNK_SIZE_Y + ((x - 1) *
+	 * CHUNK_SIZE_Y * CHUNK_SIZE_Z))]) ? 1 : 0; nx = (x < (CHUNK_SIZE_X - 1) &&
+	 * chunkData[y + ((z) * CHUNK_SIZE_Y + ((x + 1) * CHUNK_SIZE_Y *
+	 * CHUNK_SIZE_Z))]) ? 1 : 0;
+	 * 
+	 * ny = (y > 0 && chunkData[(y - 1) + ((z) * CHUNK_SIZE_Y + ((x) *
+	 * CHUNK_SIZE_Y * CHUNK_SIZE_Z))]) ? 1 : 0; py = (y < (CHUNK_SIZE_Y - 1) &&
+	 * chunkData[(y + 1) + ((z) * CHUNK_SIZE_Y + ((x) * CHUNK_SIZE_Y *
+	 * CHUNK_SIZE_Z))]) ? 1 : 0;
 	 */
 	// sides = { px: true, nx: true, py: true, ny: true, pz: true, nz: true };
 	var newIndex = nz + 2 * pz + 2 * 2 * ny + 2 * 2 * 2 * py + 2 * 2 * 2 * 2
@@ -232,7 +230,7 @@ World.prototype.__buildMesh = function(chunkData) {
 	// just extract one region
 	var hThreshold = -1;
 	var geometry = new THREE.Geometry();
-	//var group = new THREE.Object3D();
+	// var group = new THREE.Object3D();
 	
 	
 	// for each coordinate
@@ -260,7 +258,7 @@ World.prototype.__buildMesh = function(chunkData) {
 							cube.position.z = z * BLOCK_SIZE;
 							cube.matrixAutoUpdate = false;
 							cube.updateMatrix();
-							//group.addChild(cube);
+							// group.addChild(cube);
 							GeometryUtils.merge( geometry, cube );
 
 						}
@@ -270,7 +268,7 @@ World.prototype.__buildMesh = function(chunkData) {
 		}
 	}
 	
-	//return group;
+	// return group;
 	// return the geometry for this block
 	return geometry;
 }
@@ -296,7 +294,7 @@ World.prototype.__renderChunk = function(cx,cz, tempCallback) {
 		var lcz = cz - 32*regionFile.regionLoc.z;
 		
 
-		//read a chunk at local coordinates lcx, lcz
+		// read a chunk at local coordinates lcx, lcz
 		chunkData = regionFile.readChunk(lcx, lcz, cx, cz);
 		
 		if (! MULTITHREADED) {

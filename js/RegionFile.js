@@ -50,16 +50,16 @@ RegionFile.prototype.constructor = RegionFile;
  */
 RegionFile.prototype.readChunk = function(x, z, cx, cz) {
 	if (this.multiThreaded) {
-	this.worker.postMessage( {
-		d : this.data,
-		x : x,
-		z : z,
-		o : this.offsets,
-		cx : cx,
-		cz : cz
-	});
-	
-	return false;
+		this.worker.postMessage( {
+			d : this.data,
+			x : x,
+			z : z,
+			o : this.offsets,
+			cx : cx,
+			cz : cz
+		});
+		
+		return false;
 	}
 	else {
 	var rawChunk = this.__readNBTChunk(x, z);
