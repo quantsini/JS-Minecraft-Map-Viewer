@@ -82,7 +82,8 @@
 					sandstoneBottom = loadTexture( 'textures/minecraft/sandstoneBottom.png' );
 					water = loadTexture( 'textures/minecraft/water.png' );
 					lava = loadTexture( 'textures/minecraft/lava.png' );
-
+					cobblestone = loadTexture('textures/minecraft/cobblestone.png' );
+					woodPlank = loadTexture('textures/minecraft/woodPlank.png' );
 					var textures = loadTexture('textures/minecraft/textures.png');
 
 					grassMaterial = [
@@ -188,6 +189,25 @@
 					sand, // back
 					sand  // front
 					];
+					
+					
+					cobblestoneMaterial = [
+					cobblestone, // right
+					cobblestone, // left
+					cobblestone, // top
+					cobblestone, // bottom
+					cobblestone, // back
+					cobblestone  // front
+					];
+					woodPlankMaterial = [
+					woodPlank, // right
+					woodPlank, // left
+					woodPlank, // top
+					woodPlank, // bottom
+					woodPlank, // back
+					woodPlank  // front
+					];
+
 
 					world = new World(scene);
 
@@ -215,6 +235,10 @@
 					world.addBlockTexture(waterBlockType);
 					lavaBlockType = new BlockType(11, lavaMaterial);
 					world.addBlockTexture(lavaBlockType);
+					cobblestoneBlockType = new BlockType(4, cobblestoneMaterial);
+					world.addBlockTexture(cobblestoneBlockType);
+					woodPlankBlockType = new BlockType(5, woodPlankMaterial);
+					world.addBlockTexture(woodPlankBlockType);
 
 					console.log("setting up renderer");
 					renderer = new THREE.WebGLRenderer();
