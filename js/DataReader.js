@@ -1,16 +1,9 @@
-function DataReader(a) {
-	
-	this.bytes = new Uint8Array(a.length);
-	
-	for (var i = 0; i < a.length; i++) {
-		this.bytes[i] = a.charCodeAt(i);
-	}
-	
+﻿function DataReader(a) {
+	this.bytes = a
 	this.index = 0;
 	this.byteRead = 0;
 	this.bitIndex = 0;
 	this.endian = "big";
-
 }
 
 DataReader.prototype.readByte = function() {

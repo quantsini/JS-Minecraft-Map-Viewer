@@ -1,6 +1,3 @@
-//requires util
-//requires deflate
-
 var tags = {
 	'_0' : 'TAG_End',
 	'_1' : 'TAG_Byte',
@@ -12,7 +9,8 @@ var tags = {
 	'_7' : 'TAG_Byte_Array',
 	'_8' : 'TAG_String',
 	'_9' : 'TAG_List',
-	'_10' : 'TAG_Compound'
+	'_10' : 'TAG_Compound',
+	'_11' : 'TAG_Int_Array'
 };
 
 function TAG(nbtreader) {
@@ -42,6 +40,7 @@ function TAG_End(nbtreader) {
 }
 
 function TAG_Unknown(nbtreader) {
+	alert("unknown tag");
 	this.readName = readName;
 	this.read = function() {
 		return 'unknown tag type';
@@ -195,7 +194,7 @@ function TAG_String(nbtreader) {
 			if (ch)
 				str += ch;
 		} while (ch);
-		
+
 		return str;
 	};
 
@@ -250,7 +249,25 @@ function TAG_Byte_Array(nbtreader) {
 		var ret = this.reader.data.subarray(this.reader.position,
 				this.reader.position + length - 1);
 		this.reader.position += length;
-		
+
+		return ret;
+	};
+
+	this.decode = function() {
+
+	};
+}
+
+function TAG_Int_Array(nbtreader) {
+	this.reader = nbtreader;
+
+	this.read = function() {
+		var type = 1;
+		var length = makeint(this.reader.readBytes(4));
+		var tag = null;
+		var ret = new Uint32Array(this.reader.data, this.reader.position, length)
+		this.reader.position += (4*length);
+
 		return ret;
 	};
 
@@ -269,7 +286,7 @@ function TAG_Compound(nbtreader) {
 			tag = this.reader.read();
 			if ((tag !== null) && (typeof (tag) !== 'undefined') && !tag['END']) {
 				for ( var k in tag) {
-					
+
 					obj[k] = tag[k];
 				}
 			}
@@ -294,6 +311,7 @@ TAG_List.prototype.readName = readName;
 TAG_Float.prototype.readName = readName;
 TAG_Double.prototype.readName = readName;
 TAG_Byte_Array.prototype.readName = readName;
+TAG_Int_Array.prototype.readName = readName;
 
 function NBTReader(data) {
 	this.position = 0;
@@ -352,6 +370,9 @@ function NBTReader(data) {
 		case 'TAG_Compound':
 			tag = new TAG_Compound(this);
 			break;
+		case 'TAG_Int_Array':
+			tag = new TAG_Int_Array(this);
+			break;
 		default:
 			tag = new TAG_Unknown(this);
 			break;
@@ -371,7 +392,7 @@ function NBTReader(data) {
 	};
 
 	this.readBytes = function(count) {
-		
+
 		var ret = new Uint8Array(count);
 		var start = this.position;
 		var k = 0;
@@ -380,7 +401,7 @@ function NBTReader(data) {
 			this.i++;
 			//this.position++;
 		}
-		
+
 		this.position = this.position + count;
 		return ret
 	};

@@ -156,4 +156,3 @@ function getIntAt(arr, offs) {
   (arr[offs + 2] << 8) +
   arr[offs + 3];
 }
-

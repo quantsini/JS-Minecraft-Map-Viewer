@@ -1,4 +1,4 @@
-/*
+﻿/*
 
  This is a JavaScript version of the Inflate process.
  The conversion to JavaScript was performed by Casey Leonard but
